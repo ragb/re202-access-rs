@@ -89,23 +89,70 @@ pub enum Tape {
 
 /// 12 head-combination modes. Numbered to match the device's UI (Mode 1..12).
 /// Wire byte = `mode_number - 1` (0..=11).
+///
+/// The 12 modes select which combination of the 4 tape playback heads is
+/// active. From the official reference manual ("Head Combinations for Each
+/// Mode"): playback heads 2, 3, 4 have 2x, 3x, 4x the delay time of head 1.
+/// Modes 8-12 use head 4, which the original RE-201 didn't have. Mode 12 is
+/// the same all-four-heads combination as Mode 8 but with head positions
+/// optimized for a denser tail.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Mode {
+    /// Head 1 only.
     M1,
+    /// Head 2 only.
     M2,
+    /// Head 3 only.
     M3,
+    /// Heads 1 + 2.
     M4,
+    /// Heads 2 + 3.
     M5,
+    /// Heads 1 + 3.
     M6,
+    /// Heads 1 + 2 + 3.
     M7,
+    /// Heads 1 + 2 + 3 + 4.
     M8,
+    /// Heads 1 + 3 + 4.
     M9,
+    /// Heads 1 + 2 + 4.
     M10,
+    /// Heads 2 + 3 + 4. (Not yet device-verified; extraction may be ambiguous —
+    /// see open question about Mode 11 in `docs/sysex-notes.md`.)
     M11,
+    /// All four heads, dense arrangement (head positions optimized for thicker tail).
     M12,
+}
+
+impl Mode {
+    /// Which playback heads are active in this mode. Returns a slice of head
+    /// numbers (1..=4). Mode 12 returns the same set as Mode 8 — they differ
+    /// only in head-spacing internals.
+    pub fn active_heads(self) -> &'static [u8] {
+        match self {
+            Mode::M1 => &[1],
+            Mode::M2 => &[2],
+            Mode::M3 => &[3],
+            Mode::M4 => &[1, 2],
+            Mode::M5 => &[2, 3],
+            Mode::M6 => &[1, 3],
+            Mode::M7 => &[1, 2, 3],
+            Mode::M8 => &[1, 2, 3, 4],
+            Mode::M9 => &[1, 3, 4],
+            Mode::M10 => &[1, 2, 4],
+            Mode::M11 => &[2, 3, 4],
+            Mode::M12 => &[1, 2, 3, 4],
+        }
+    }
+
+    /// User-facing mode number (1..=12).
+    pub fn number(self) -> u8 {
+        self.to_byte() + 1
+    }
 }
 
 impl Tape {
@@ -294,6 +341,22 @@ impl Memory {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mode_active_heads_table() {
+        assert_eq!(Mode::M1.active_heads(), &[1]);
+        assert_eq!(Mode::M4.active_heads(), &[1, 2]);
+        assert_eq!(Mode::M8.active_heads(), &[1, 2, 3, 4]);
+        assert_eq!(Mode::M11.active_heads(), &[2, 3, 4]);
+        assert_eq!(Mode::M12.active_heads(), &[1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn mode_number_is_one_indexed() {
+        assert_eq!(Mode::M1.number(), 1);
+        assert_eq!(Mode::M5.number(), 5);
+        assert_eq!(Mode::M12.number(), 12);
+    }
 
     #[test]
     fn unpack_pack_tap_time_round_trips() {
