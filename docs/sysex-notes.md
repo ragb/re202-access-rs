@@ -133,12 +133,27 @@ Not in the official MIDI Implementation PDF. Discovered by address-sweep + devic
 
 - 33-byte region at `20 00 00 00` that **always reflects the currently-active memory's contents.**
 - Confirmed: while the device was on MEMORY 1, RQ1 returned bytes identical to `20 20 00 00`. After advancing to MEMORY 2 via the MEMORY footswitch, the same RQ1 returned bytes identical to `20 30 00 00`. Two distinct data sets — not a coincidence.
-- Use cases:
-  - Read live edits without committing to a slot.
-  - Write live edits without committing to a slot.
-- Open: does writing to `20 00 00 00` propagate to the active slot, or does the change persist only until the user changes slots / presses WRITE?
+- **Writable** (confirmed 2026-05-27 via `sync --edit`). Writing changes the live audio.
+- **Volatile** — writes do NOT propagate to the active stored slot. After writing repeat_rate=100 to `20 00 00 00`, MEMORY 2 (`20 30 00 00`) was unchanged. To commit live edits, write directly to the slot's address (or have the user press WRITE on the device).
+
+This is the ideal editor design pattern: edit buffer for live tweaks; slot writes for committing. Both first-class, independent.
 
 Captured fixtures: [`edit_buffer_mirrors_memory2.syx`](../re202-core/tests/fixtures/edit_buffer_mirrors_memory2.syx) (snapshot while MEMORY 2 was active — identical to `memory_002_dump.syx` by design).
+
+## Writable address map (confirmed)
+
+| Address | Writable? | Persistent? |
+|---|---|---|
+| `10 00 00 00` System | yes | yes (state changes survive subsequent sessions) |
+| `20 00 00 00` Edit buffer | yes | no — volatile; replaced when active memory changes |
+| `20 10 00 00`..`30 00 00 00` Memory slots | yes | yes — direct DT1 persists; no "save" command needed |
+
+Verification: 2026-05-27.
+- System: wrote `MIDI Thru = 0` via DT1 to `10 00 00 11`; readback confirms.
+- Edit buffer: wrote `repeat_rate.value = 100` via DT1 to `20 00 00 00`; readback confirms; MEMORY 2 unchanged.
+- Memory 127: wrote `bass.value = 50` via DT1 to `30 00 00 00`; readback confirms; restored after.
+
+Power-cycle persistence of slot writes not yet tested.
 
 ## CC stream behavior (device-observed)
 
@@ -162,13 +177,12 @@ With `MIDI CC Out = ON`, knob twists emit a **continuous stream of CCs** as the 
 
 ## Open questions (in priority order)
 
-1. **Is the edit buffer at `20 00 00 00` writable**, and if so does writing propagate to the active slot or only to the live audio?
+1. **Slot persistence across power cycles**: direct DT1 writes to a slot's address succeed and are reflected by RQ1, but we haven't power-cycled the device to confirm they survive.
 2. **What is at `7F 00 00 00`?** Single-byte region returning `0x00`. Device-info? Bank-select pointer? Test writes carefully.
 3. **Per-memory Time Mode at offset `0x20`** vs. System Time Mode at `0x06` — which wins?
-4. **Save / load / factory-reset commands.** Spec doesn't document; holding MEMORY ("WRITE") is silent over MIDI. So if we want to programmatically save current edits to a slot, we'd need to discover the command or use the device's button.
-5. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
-6. **PC# → memory mapping**. We observed PC#0 fire when the user stomped MEMORY. Confirm whether PC#0=MANUAL or PC#0=MEMORY 1.
-7. **Inbound device ID 0x7F (broadcast).** Spec says supported; not yet device-verified.
+4. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
+5. **PC# → memory mapping**. We observed PC#0 fire when the user stomped MEMORY. Confirm whether PC#0=MANUAL or PC#0=MEMORY 1.
+6. **Inbound device ID 0x7F (broadcast).** Spec says supported; not yet device-verified.
 
 ## Refuted / dead ends
 
