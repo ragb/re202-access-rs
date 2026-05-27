@@ -24,6 +24,22 @@ cargo fmt --check
 cargo clippy --workspace -- -D warnings
 ```
 
+## Library tour
+
+A 60-second guided tour of the codec API lives at
+[`re202-core/examples/library_tour.rs`](re202-core/examples/library_tour.rs).
+Run it without any MIDI hardware:
+
+```powershell
+cargo run --example library_tour -p re202-core
+```
+
+It walks through: constructing an RQ1, decoding a captured fixture into the
+typed `SystemArea`, decoding a `Memory` (with Tap Time auto-unpacked from its
+nibble-packed wire format), `classify_inbound` routing, editing a `Memory` and
+re-encoding it for a DT1 back to the device's edit buffer, and the address
+arithmetic `MemorySlot` uses to handle the 7-bit carry across `User(7)` → `User(8)`.
+
 ## YAML schema
 
 YAML files emitted by `re202 dump` carry a `# yaml-language-server: $schema=...`
