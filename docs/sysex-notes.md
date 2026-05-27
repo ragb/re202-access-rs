@@ -175,14 +175,39 @@ With `MIDI CC Out = ON`, knob twists emit a **continuous stream of CCs** as the 
 
 **Side effect: TAP triggers MIDI Clock streaming.** Undocumented — not gated by `MIDI Sync Source` or `MIDI Realtime Source` System parameters. Becomes active when TAP sets a tempo and stays active until tempo is cleared.
 
-## Open questions (in priority order)
+## PC# memory mapping (confirmed)
+
+Verified 2026-05-27 by sending PC#0, 1, 2 in sequence and reading the edit buffer:
+
+- **PC#1 → MEMORY 1** (edit buffer matched MEMORY 1's stored bytes)
+- **PC#2 → MEMORY 2** (matched)
+- **PC#0 → did not match MANUAL, MEMORY 1, or MEMORY 2.** Likely a no-op on this firmware, or means something other than "MANUAL slot." Treat PC#0 as undefined for slot selection; use PC#1..=127 for User memories.
+
+The CLI's `re202 select N` sends PC#N on channel 1. To select MANUAL via the device, use the front-panel MEMORY footswitch.
+
+## Broadcast device id 0x7F (confirmed)
+
+Verified 2026-05-27: RQ1 with `dd = 0x7F` to a known address returned a normal DT1 reply from the device. **The device responds with its own configured device id (`0x10`) in the reply**, not the broadcast id. Useful for discovery when the device id is unknown.
+
+## Time Mode precedence (partial — independence confirmed, audio precedence open)
+
+System Time Mode (`10 00 00 06`) and per-memory Time Mode (memory offset `0x20`) are **independent storage**:
+
+- Wrote System = LONG via DT1; the active memory's Time Mode stayed NORMAL (no propagation).
+- Wrote per-memory Time Mode = NORMAL via DT1 (also unchanged in this direction).
+
+Which one controls the audio max-tap-time clamp (1000 ms NORMAL vs. 2000 ms LONG) was not audio-tested. Most likely the per-memory value applies when a slot is active and System applies for MANUAL — but unverified.
+
+## What is at `7F 00 00 00`? (still opaque)
+
+Single byte returning `0x00`. RQ1 with size > 1 returns nothing. Writing to it is risky and not yet tested. Treat as off-limits unless someone has a reason.
+
+## Open questions (remaining)
 
 1. **Slot persistence across power cycles**: direct DT1 writes to a slot's address succeed and are reflected by RQ1, but we haven't power-cycled the device to confirm they survive.
-2. **What is at `7F 00 00 00`?** Single-byte region returning `0x00`. Device-info? Bank-select pointer? Test writes carefully.
-3. **Per-memory Time Mode at offset `0x20`** vs. System Time Mode at `0x06` — which wins?
+2. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
+3. **What does PC#0 do?** Edit buffer didn't match MANUAL afterward — possibly no-op, possibly something else.
 4. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
-5. **PC# → memory mapping**. We observed PC#0 fire when the user stomped MEMORY. Confirm whether PC#0=MANUAL or PC#0=MEMORY 1.
-6. **Inbound device ID 0x7F (broadcast).** Spec says supported; not yet device-verified.
 
 ## Refuted / dead ends
 
