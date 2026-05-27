@@ -8,6 +8,8 @@ pub mod address;
 pub mod codec;
 pub mod inbound;
 pub mod memory;
+#[cfg(feature = "schema")]
+pub mod schema;
 pub mod sysex;
 pub mod system;
 pub mod yaml;

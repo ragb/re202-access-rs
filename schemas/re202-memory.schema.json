@@ -1,0 +1,200 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Memory",
+  "description": "Typed view of a 33-byte memory block.\n\nUsed for both stored slots (MEMORY MANUAL, MEMORY 1..=127) and the edit-buffer mirror at `20 00 00 00`. The address is what differentiates; the payload format is the same.",
+  "type": "object",
+  "required": [
+    "bass",
+    "echo_volume",
+    "intensity",
+    "mode",
+    "repeat_rate",
+    "reverb_sw",
+    "reverb_volume",
+    "saturation",
+    "tap_sw",
+    "tap_time_ms",
+    "tape",
+    "time_mode",
+    "treble",
+    "wow_flutter"
+  ],
+  "properties": {
+    "bass": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "echo_volume": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "intensity": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "mode": {
+      "$ref": "#/definitions/Mode"
+    },
+    "repeat_rate": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "reverb_sw": {
+      "type": "boolean"
+    },
+    "reverb_volume": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "saturation": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "tap_sw": {
+      "type": "boolean"
+    },
+    "tap_time_ms": {
+      "description": "0..=2000 ms. Wire format packs this as four 4-bit nibbles, MSB→LSB, at offsets 0x1C..0x1F. Effective ceiling depends on Time Mode (Normal=1000 ms, Long=2000 ms) — not enforced here.",
+      "type": "integer",
+      "format": "uint16",
+      "minimum": 0.0
+    },
+    "tape": {
+      "$ref": "#/definitions/Tape"
+    },
+    "time_mode": {
+      "$ref": "#/definitions/TimeMode"
+    },
+    "treble": {
+      "$ref": "#/definitions/RangedParam"
+    },
+    "wow_flutter": {
+      "$ref": "#/definitions/RangedParam"
+    }
+  },
+  "definitions": {
+    "Mode": {
+      "description": "12 head-combination modes. Numbered to match the device's UI (Mode 1..12). Wire byte = `mode_number - 1` (0..=11).\n\nThe 12 modes select which combination of the 4 tape playback heads is active. From the official reference manual (\"Head Combinations for Each Mode\"): playback heads 2, 3, 4 have 2x, 3x, 4x the delay time of head 1. Modes 8-12 use head 4, which the original RE-201 didn't have. Mode 12 is the same all-four-heads combination as Mode 8 but with head positions optimized for a denser tail.",
+      "oneOf": [
+        {
+          "description": "Head 1 only.",
+          "type": "string",
+          "enum": [
+            "m1"
+          ]
+        },
+        {
+          "description": "Head 2 only.",
+          "type": "string",
+          "enum": [
+            "m2"
+          ]
+        },
+        {
+          "description": "Head 3 only.",
+          "type": "string",
+          "enum": [
+            "m3"
+          ]
+        },
+        {
+          "description": "Heads 1 + 2.",
+          "type": "string",
+          "enum": [
+            "m4"
+          ]
+        },
+        {
+          "description": "Heads 2 + 3.",
+          "type": "string",
+          "enum": [
+            "m5"
+          ]
+        },
+        {
+          "description": "Heads 1 + 3.",
+          "type": "string",
+          "enum": [
+            "m6"
+          ]
+        },
+        {
+          "description": "Heads 1 + 2 + 3.",
+          "type": "string",
+          "enum": [
+            "m7"
+          ]
+        },
+        {
+          "description": "Heads 1 + 2 + 3 + 4.",
+          "type": "string",
+          "enum": [
+            "m8"
+          ]
+        },
+        {
+          "description": "Heads 1 + 3 + 4.",
+          "type": "string",
+          "enum": [
+            "m9"
+          ]
+        },
+        {
+          "description": "Heads 1 + 2 + 4.",
+          "type": "string",
+          "enum": [
+            "m10"
+          ]
+        },
+        {
+          "description": "Heads 2 + 3 + 4. (Not yet device-verified; extraction may be ambiguous — see open question about Mode 11 in `docs/sysex-notes.md`.)",
+          "type": "string",
+          "enum": [
+            "m11"
+          ]
+        },
+        {
+          "description": "All four heads, dense arrangement (head positions optimized for thicker tail).",
+          "type": "string",
+          "enum": [
+            "m12"
+          ]
+        }
+      ]
+    },
+    "RangedParam": {
+      "description": "A value-with-expression-pedal-range parameter (Repeat Rate, Intensity, etc.).",
+      "type": "object",
+      "required": [
+        "max",
+        "min",
+        "value"
+      ],
+      "properties": {
+        "max": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "min": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "value": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        }
+      }
+    },
+    "Tape": {
+      "type": "string",
+      "enum": [
+        "new",
+        "aged"
+      ]
+    },
+    "TimeMode": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "long"
+      ]
+    }
+  }
+}

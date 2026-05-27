@@ -75,6 +75,12 @@ pub enum Command {
         /// Slot: `manual` or 1..=127.
         slot: String,
     },
+
+    /// Print the JSON Schema for one of the typed models.
+    Schema {
+        /// Which schema: `system` or `memory`.
+        kind: String,
+    },
 }
 
 #[derive(clap::Args, Debug)]
@@ -175,7 +181,20 @@ pub fn run(cli: Cli) -> Result<()> {
             let mut session = open_session(&session_args)?;
             select(&mut session, &slot)
         }
+
+        Command::Schema { kind } => emit_schema(&kind),
     }
+}
+
+fn emit_schema(kind: &str) -> Result<()> {
+    let schema = match kind.to_ascii_lowercase().as_str() {
+        "system" => re202_core::schema::system_area_schema(),
+        "memory" => re202_core::schema::memory_schema(),
+        other => bail!("unknown schema kind {other:?} (valid: system, memory)"),
+    };
+    let json = serde_json::to_string_pretty(&schema).context("serialize schema")?;
+    println!("{json}");
+    Ok(())
 }
 
 struct SessionArgs {

@@ -24,6 +24,20 @@ cargo fmt --check
 cargo clippy --workspace -- -D warnings
 ```
 
+## YAML schema
+
+YAML files emitted by `re202 dump` carry a `# yaml-language-server: $schema=...`
+header pointing at the JSON Schemas in [`schemas/`](schemas/). VS Code with
+the YAML extension (and most other editors that respect the comment) will
+auto-validate the document — enum values, ranges, required fields all checked.
+
+Regenerate the schemas after changing the typed models:
+
+```powershell
+.\target\release\re202.exe schema system > schemas\re202-system.schema.json
+.\target\release\re202.exe schema memory > schemas\re202-memory.schema.json
+```
+
 Building the WASM bundle:
 
 ```powershell

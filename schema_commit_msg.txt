@@ -1,0 +1,32 @@
+Generate JSON Schema for SystemArea and Memory; auto-validating YAML
+
+Adds the `schema` cargo feature on re202-core (gated on `schemars`),
+with `JsonSchema` derives on every typed model. Exposes:
+
+  re202_core::schema::system_area_schema() -> RootSchema
+  re202_core::schema::memory_schema() -> RootSchema
+
+CLI gains `re202 schema [system|memory]` which prints the schema to
+stdout. The repo also includes the generated schemas at
+`schemas/re202-system.schema.json` and `schemas/re202-memory.schema.json`,
+so editors can validate immediately without running the binary first.
+
+YAML headers split per-type so each emitted file points at the right
+schema:
+
+  # yaml-language-server: $schema=./schemas/re202-system.schema.json
+  # yaml-language-server: $schema=./schemas/re202-memory.schema.json
+
+VS Code with the YAML extension (and most other editors that respect
+the `yaml-language-server` comment) will now auto-validate dumped files
+against the schemas - enum values restricted to their named variants
+("guitar" | "line", "spring" | "hall" | ..., "m1" | ... | "m12"),
+integer ranges declared, required fields enforced, doc-comment text
+surfaced as hover help.
+
+README.md gains a "YAML schema" section with the regeneration command.
+
+44 tests pass; wasm-pack build --target web --release still produces
+the typed pkg/ (tsify and schemars coexist on the same models).
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>

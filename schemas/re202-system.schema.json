@@ -1,0 +1,213 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemArea",
+  "description": "Typed view of the System area.\n\nFields are ordered the same way they appear in the byte layout. Grouped: `direct.*` covers offsets 0x03..=0x04; `midi.*` covers offsets 0x09..=0x11.",
+  "type": "object",
+  "required": [
+    "carryover",
+    "ctl1_function",
+    "ctl2_function",
+    "direct",
+    "input_source",
+    "memory_extent",
+    "midi",
+    "reverb_type",
+    "time_mode"
+  ],
+  "properties": {
+    "carryover": {
+      "type": "boolean"
+    },
+    "ctl1_function": {
+      "$ref": "#/definitions/Ctl1Function"
+    },
+    "ctl2_function": {
+      "$ref": "#/definitions/Ctl2Function"
+    },
+    "direct": {
+      "$ref": "#/definitions/DirectSettings"
+    },
+    "input_source": {
+      "$ref": "#/definitions/InputSource"
+    },
+    "memory_extent": {
+      "description": "1..=4 — number of memory slots cycled by the MEMORY footswitch.",
+      "type": "integer",
+      "format": "uint8",
+      "minimum": 0.0
+    },
+    "midi": {
+      "$ref": "#/definitions/MidiSettings"
+    },
+    "reverb_type": {
+      "$ref": "#/definitions/ReverbType"
+    },
+    "time_mode": {
+      "$ref": "#/definitions/TimeMode"
+    }
+  },
+  "definitions": {
+    "Ctl1Function": {
+      "type": "string",
+      "enum": [
+        "memory_up",
+        "memory_down",
+        "effect_on_off",
+        "tap",
+        "warp"
+      ]
+    },
+    "Ctl2Function": {
+      "type": "string",
+      "enum": [
+        "memory_up",
+        "memory_down",
+        "effect_on_off",
+        "tap",
+        "twist"
+      ]
+    },
+    "DirectMode": {
+      "type": "string",
+      "enum": [
+        "analog",
+        "re201_simulate"
+      ]
+    },
+    "DirectSettings": {
+      "type": "object",
+      "required": [
+        "mode",
+        "on"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/DirectMode"
+        },
+        "on": {
+          "type": "boolean"
+        }
+      }
+    },
+    "InputSource": {
+      "type": "string",
+      "enum": [
+        "guitar",
+        "line"
+      ]
+    },
+    "MidiChannel": {
+      "description": "MIDI Rx channel — `off` or `1..=16`.\n\nYAML: `off` or an integer 1..=16.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        {
+          "$ref": "#/definitions/MidiChannelSymbol"
+        }
+      ]
+    },
+    "MidiChannelSymbol": {
+      "type": "string",
+      "enum": [
+        "off"
+      ]
+    },
+    "MidiSettings": {
+      "type": "object",
+      "required": [
+        "cc_in",
+        "cc_out",
+        "pc_in",
+        "pc_out",
+        "realtime_source",
+        "rx_channel",
+        "sync_source",
+        "thru",
+        "tx_channel"
+      ],
+      "properties": {
+        "cc_in": {
+          "type": "boolean"
+        },
+        "cc_out": {
+          "type": "boolean"
+        },
+        "pc_in": {
+          "type": "boolean"
+        },
+        "pc_out": {
+          "type": "boolean"
+        },
+        "realtime_source": {
+          "$ref": "#/definitions/RealtimeSource"
+        },
+        "rx_channel": {
+          "$ref": "#/definitions/MidiChannel"
+        },
+        "sync_source": {
+          "$ref": "#/definitions/SyncSource"
+        },
+        "thru": {
+          "type": "boolean"
+        },
+        "tx_channel": {
+          "$ref": "#/definitions/TxChannel"
+        }
+      }
+    },
+    "RealtimeSource": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "midi"
+      ]
+    },
+    "ReverbType": {
+      "type": "string",
+      "enum": [
+        "spring",
+        "hall",
+        "plate",
+        "room",
+        "ambience"
+      ]
+    },
+    "SyncSource": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "auto"
+      ]
+    },
+    "TimeMode": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "long"
+      ]
+    },
+    "TxChannel": {
+      "description": "MIDI Tx channel — `off`, `1..=16`, or `rx` (follows RX channel).\n\nYAML: `off`, `rx`, or an integer 1..=16.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        {
+          "$ref": "#/definitions/TxChannelSymbol"
+        }
+      ]
+    },
+    "TxChannelSymbol": {
+      "type": "string",
+      "enum": [
+        "off",
+        "rx"
+      ]
+    }
+  }
+}

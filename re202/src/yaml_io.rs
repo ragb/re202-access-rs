@@ -3,10 +3,10 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use re202_core::yaml::YAML_SCHEMA_HEADER;
+use re202_core::yaml::{MEMORY_YAML_HEADER, SYSTEM_YAML_HEADER};
 use re202_core::{Memory, SystemArea};
 
-fn write_yaml(path: &Path, body: &str) -> Result<()> {
+fn write_yaml(path: &Path, header: &str, body: &str) -> Result<()> {
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             std::fs::create_dir_all(parent)
@@ -14,7 +14,7 @@ fn write_yaml(path: &Path, body: &str) -> Result<()> {
         }
     }
     let mut out = String::new();
-    out.push_str(YAML_SCHEMA_HEADER);
+    out.push_str(header);
     out.push('\n');
     out.push_str(body);
     std::fs::write(path, out).with_context(|| format!("writing {}", path.display()))
@@ -22,12 +22,12 @@ fn write_yaml(path: &Path, body: &str) -> Result<()> {
 
 pub fn write_system(path: &Path, system: &SystemArea) -> Result<()> {
     let body = serde_yaml::to_string(system).context("serialize SystemArea")?;
-    write_yaml(path, &body)
+    write_yaml(path, SYSTEM_YAML_HEADER, &body)
 }
 
 pub fn write_memory(path: &Path, memory: &Memory) -> Result<()> {
     let body = serde_yaml::to_string(memory).context("serialize Memory")?;
-    write_yaml(path, &body)
+    write_yaml(path, MEMORY_YAML_HEADER, &body)
 }
 
 pub fn read_system(path: &Path) -> Result<SystemArea> {

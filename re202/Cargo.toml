@@ -11,8 +11,10 @@ name = "re202"
 path = "src/main.rs"
 
 [dependencies]
-re202-core = { workspace = true }
+re202-core = { workspace = true, features = ["schema"] }
 clap = { workspace = true }
+schemars = { workspace = true }
+serde_json = { workspace = true }
 midir = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }

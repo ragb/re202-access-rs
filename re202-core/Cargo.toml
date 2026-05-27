@@ -10,6 +10,8 @@ description = "BOSS RE-202 Space Echo SysEx codec (pure, no I/O)."
 default = []
 # Enabled by the wasm crate. Adds Tsify derives so types render as TS.
 tsify = ["dep:tsify-next", "dep:wasm-bindgen"]
+# Enabled by the CLI when emitting JSON Schema. Adds schemars derives.
+schema = ["dep:schemars"]
 
 [dependencies]
 thiserror = { workspace = true }
@@ -17,3 +19,4 @@ serde = { workspace = true }
 serde_yaml = { workspace = true }
 tsify-next = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }

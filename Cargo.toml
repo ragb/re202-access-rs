@@ -24,6 +24,7 @@ wasm-bindgen = "0.2"
 serde-wasm-bindgen = "0.6"
 tsify-next = { version = "0.5", features = ["js"] }
 getrandom = { version = "0.3", features = ["wasm_js"] }
+schemars = "0.8"
 
 [profile.release]
 lto = "thin"
