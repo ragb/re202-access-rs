@@ -1,16 +1,18 @@
-//! Path-aware YAML helpers. Wraps `re202_core::yaml` with file I/O.
-//!
-//! Adds the `# yaml-language-server: $schema=...` header on write so the user
-//! gets schema validation in their editor of choice.
-
-#![allow(dead_code)]
+//! Path-aware YAML helpers for the typed core models.
 
 use std::path::Path;
 
 use anyhow::{Context, Result};
 use re202_core::yaml::YAML_SCHEMA_HEADER;
+use re202_core::{Memory, SystemArea};
 
-pub fn write_with_schema_header(path: &Path, body: &str) -> Result<()> {
+fn write_yaml(path: &Path, body: &str) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("creating {}", parent.display()))?;
+        }
+    }
     let mut out = String::new();
     out.push_str(YAML_SCHEMA_HEADER);
     out.push('\n');
@@ -18,6 +20,22 @@ pub fn write_with_schema_header(path: &Path, body: &str) -> Result<()> {
     std::fs::write(path, out).with_context(|| format!("writing {}", path.display()))
 }
 
-pub fn read_to_string(path: &Path) -> Result<String> {
-    std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
+pub fn write_system(path: &Path, system: &SystemArea) -> Result<()> {
+    let body = serde_yaml::to_string(system).context("serialize SystemArea")?;
+    write_yaml(path, &body)
+}
+
+pub fn write_memory(path: &Path, memory: &Memory) -> Result<()> {
+    let body = serde_yaml::to_string(memory).context("serialize Memory")?;
+    write_yaml(path, &body)
+}
+
+pub fn read_system(path: &Path) -> Result<SystemArea> {
+    let s = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    serde_yaml::from_str(&s).with_context(|| format!("parsing SystemArea from {}", path.display()))
+}
+
+pub fn read_memory(path: &Path) -> Result<Memory> {
+    let s = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    serde_yaml::from_str(&s).with_context(|| format!("parsing Memory from {}", path.display()))
 }

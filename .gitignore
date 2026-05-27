@@ -17,6 +17,9 @@ tools/explore/captures/
 # Reference photos downloaded for one-off use (accessibility, debugging)
 tools/explore/photos/
 
+# YAML dumps the user produces by running `re202 dump`
+tools/explore/dumps/
+
 # IDE
 .vscode/
 .idea/
