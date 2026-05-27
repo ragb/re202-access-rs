@@ -1,0 +1,30 @@
+[package]
+name = "re202-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WASM + TypeScript bindings for re202-core."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+re202-core = { workspace = true, features = ["tsify"] }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+tsify-next = { workspace = true }
+# Required because some transitive dep (e.g. uuid via jsonschema, if/when we add it)
+# pulls in `getrandom`. The `.cargo/config.toml` flag and this feature must both be set.
+getrandom = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+# rustc 1.95 emits wasm using bulk-memory + nontrapping-float-to-int, but the
+# wasm-opt bundled with wasm-pack 0.14 doesn't accept either feature yet. The
+# binary is fine without the post-processing step; bundle size is slightly larger.
+# Revisit when wasm-pack ships a newer wasm-opt.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

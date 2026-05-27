@@ -1,0 +1,5 @@
+# Required for `getrandom` 0.3 on wasm32 — see re202-wasm/Cargo.toml.
+# Without this flag, any transitive `getrandom` user (e.g. uuid via jsonschema)
+# fails to compile for wasm32-unknown-unknown.
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']

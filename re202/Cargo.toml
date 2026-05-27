@@ -1,0 +1,21 @@
+[package]
+name = "re202"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI for the BOSS RE-202 Space Echo (dump/sync/diff/show/lint/select)."
+
+[[bin]]
+name = "re202"
+path = "src/main.rs"
+
+[dependencies]
+re202-core = { workspace = true }
+clap = { workspace = true }
+midir = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde_yaml = { workspace = true }

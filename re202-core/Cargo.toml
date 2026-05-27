@@ -1,0 +1,19 @@
+[package]
+name = "re202-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "BOSS RE-202 Space Echo SysEx codec (pure, no I/O)."
+
+[features]
+default = []
+# Enabled by the wasm crate. Adds Tsify derives so types render as TS.
+tsify = ["dep:tsify-next", "dep:wasm-bindgen"]
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+tsify-next = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }

@@ -1,0 +1,27 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# WASM build outputs
+/re202-wasm/pkg
+/re202-wasm/target
+
+# Python explorer venvs and caches
+tools/explore/.venv/
+tools/explore/__pycache__/
+tools/explore/*.pyc
+
+# Captured SysEx that's experimental / not yet promoted to fixtures
+tools/explore/captures/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Claude Code per-project state
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
