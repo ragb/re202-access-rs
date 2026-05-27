@@ -235,6 +235,13 @@ fn byte_to_bool(b: u8, field: &'static str) -> Result<bool, CodecError> {
 
 /// Unpack 4 nibble bytes into a single 0..=2000 value.
 /// Each input byte uses only its low 4 bits (`0000 dddd`). MSB first.
+///
+/// ```ignore
+/// // 500 ms = 0x01F4
+/// // nibbles MSB to LSB: 0, 1, 0xF, 4
+/// let ms = re202_core::memory::unpack_tap_time(&[0x00, 0x01, 0x0F, 0x04]).unwrap();
+/// assert_eq!(ms, 500);
+/// ```
 pub(crate) fn unpack_tap_time(bytes: &[u8; 4]) -> Result<u16, CodecError> {
     for (i, &b) in bytes.iter().enumerate() {
         if b > 0x0F {

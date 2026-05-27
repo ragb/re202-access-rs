@@ -72,6 +72,21 @@ pub struct Frame {
 }
 
 impl Frame {
+    /// Build a Data Set (DT1) frame. The recipient writes `data` to `address`.
+    ///
+    /// ```
+    /// use re202_core::Frame;
+    /// // Set System / Input Source to Guitar (0x00).
+    /// let frame = Frame::data_set(0x10, [0x10, 0x00, 0x00, 0x00], vec![0x00]);
+    /// let bytes = frame.encode();
+    /// assert_eq!(
+    ///     bytes,
+    ///     [
+    ///         0xF0, 0x41, 0x10, 0x00, 0x00, 0x00, 0x00, 0x18, 0x12, 0x10, 0x00, 0x00, 0x00,
+    ///         0x00, 0x70, 0xF7,
+    ///     ]
+    /// );
+    /// ```
     pub fn data_set(device_id: u8, address: [u8; 4], data: Vec<u8>) -> Self {
         Self {
             device_id,
@@ -81,8 +96,15 @@ impl Frame {
         }
     }
 
-    /// Request `size` bytes from the device starting at `address`.
-    /// RQ1's data payload is conventionally a 4-byte big-endian (7-bit safe) size.
+    /// Build a Data Request (RQ1) frame asking the device to send `size` bytes
+    /// starting at `address`. `size` is encoded as 4 big-endian 7-bit-safe bytes.
+    ///
+    /// ```
+    /// use re202_core::Frame;
+    /// // Read the whole System area (18 bytes).
+    /// let rq1 = Frame::data_request(0x10, [0x10, 0x00, 0x00, 0x00], [0, 0, 0, 0x12]);
+    /// assert_eq!(rq1.encode().len(), 19);
+    /// ```
     pub fn data_request(device_id: u8, address: [u8; 4], size: [u8; 4]) -> Self {
         Self {
             device_id,

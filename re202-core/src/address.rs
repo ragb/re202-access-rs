@@ -74,6 +74,16 @@ impl MemorySlot {
     /// Encoding: starting at `20 10 00 00` (MANUAL), advance by `00 10 00 00`
     /// per slot, carrying from the second byte into the first when it exceeds `0x7F`.
     /// Slot 127 lands at `30 00 00 00`.
+    ///
+    /// ```
+    /// use re202_core::address::MemorySlot;
+    /// assert_eq!(MemorySlot::Manual.base_address(),    [0x20, 0x10, 0x00, 0x00]);
+    /// assert_eq!(MemorySlot::User(1).base_address(),   [0x20, 0x20, 0x00, 0x00]);
+    /// assert_eq!(MemorySlot::User(6).base_address(),   [0x20, 0x70, 0x00, 0x00]);
+    /// // 7-bit carry boundary: (6+1)*0x10 = 0x80 wraps into the high byte.
+    /// assert_eq!(MemorySlot::User(7).base_address(),   [0x21, 0x00, 0x00, 0x00]);
+    /// assert_eq!(MemorySlot::User(127).base_address(), [0x30, 0x00, 0x00, 0x00]);
+    /// ```
     pub fn base_address(self) -> [u8; 4] {
         let index: u16 = match self {
             MemorySlot::Manual => 0,

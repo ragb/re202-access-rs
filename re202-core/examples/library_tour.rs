@@ -95,9 +95,9 @@ fn main() {
     for slot in [
         MemorySlot::Manual,
         MemorySlot::User(1),
-        MemorySlot::User(7), // the carry boundary
-        MemorySlot::User(8), // first byte advances past 0x7F here
-        MemorySlot::User(127),
+        MemorySlot::User(6),   // last slot before the 7-bit carry
+        MemorySlot::User(7),   // (7+1)*0x10 = 0x80, wraps into high byte
+        MemorySlot::User(127), // the high-end anchor
     ] {
         println!("     {:?}  ->  {:02X?}", slot, slot.base_address());
     }
