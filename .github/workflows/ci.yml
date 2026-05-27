@@ -37,6 +37,18 @@ jobs:
       - name: Test
         run: cargo test --workspace --locked
 
+      - name: Verify schemas/ are up to date
+        # Regenerates the committed JSON Schemas and fails if they drift.
+        # If this step fails locally, run:
+        #   cargo run --release --bin re202 -- schema system > schemas/re202-system.schema.json
+        #   cargo run --release --bin re202 -- schema memory > schemas/re202-memory.schema.json
+        # and commit the result.
+        run: |
+          cargo run --release --bin re202 --locked -- schema system > /tmp/system.schema.json
+          cargo run --release --bin re202 --locked -- schema memory > /tmp/memory.schema.json
+          diff -u schemas/re202-system.schema.json /tmp/system.schema.json
+          diff -u schemas/re202-memory.schema.json /tmp/memory.schema.json
+
   wasm:
     name: WASM bindings
     runs-on: ubuntu-latest

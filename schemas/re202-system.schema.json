@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "SystemArea",
   "description": "Typed view of the System area.\n\nFields are ordered the same way they appear in the byte layout. Grouped: `direct.*` covers offsets 0x03..=0x04; `midi.*` covers offsets 0x09..=0x11.",
