@@ -121,12 +121,13 @@ pub enum Mode {
     M7,
     /// Heads 1 + 2 + 3 + 4.
     M8,
-    /// Heads 1 + 3 + 4.
+    /// Heads 1 + 3 + 4. (Modes 9, 10, 11 are unverified — two independent
+    /// readings of the reference-manual head table disagreed. Audio test
+    /// needed; see open question in `docs/sysex-notes.md`.)
     M9,
-    /// Heads 1 + 2 + 4.
+    /// Heads 1 + 2 + 4. (Unverified — see Mode 9.)
     M10,
-    /// Heads 2 + 3 + 4. (Not yet device-verified; extraction may be ambiguous —
-    /// see open question about Mode 11 in `docs/sysex-notes.md`.)
+    /// Heads 2 + 3 + 4. (Unverified — see Mode 9.)
     M11,
     /// All four heads, dense arrangement (head positions optimized for thicker tail).
     M12,

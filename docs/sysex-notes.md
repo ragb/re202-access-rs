@@ -210,7 +210,12 @@ Single byte returning `0x00`. RQ1 with size > 1 returns nothing. Writing to it i
 1. **Slot persistence across power cycles**: direct DT1 writes to a slot's address succeed and are reflected by RQ1, but we haven't power-cycled the device to confirm they survive.
 2. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
 3. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
-4. **Mode 11 head combination**: extracted from the reference manual as heads 2+3+4. The HTML-parse pass returned an apparent duplicate of Mode 10 (1+2+4), so this entry was set from convention. Confirm by audio-listening or by reading the actual manual page (`re-202_reference/eng/25633275.html`).
+4. **Mode 9-11 head combinations** (M1..M8 and M12 confirmed; the middle three are uncertain). Two LLM-summarized reads of the manual's head table disagreed:
+
+   - Pass A: M9=[1,3,4], M10=[1,2,4], M11=[1,2,4]
+   - Pass B: M10=[1,3,4], M11=[1,2,3,4]
+
+   Code currently encodes [1,3,4] / [1,2,4] / [2,3,4] (last from RE-201 convention). Audio verification: pick a tap-time that makes individual head spacings audible, switch through Modes 9, 10, 11, and count tap repeats per cycle to identify which heads are active.
 
 ## Refuted / dead ends
 
