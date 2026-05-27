@@ -14,7 +14,28 @@ Modeled after [`ml10x-access-rs`](https://github.com/ragb/ml10x-access-rs).
 
 ## Status
 
-Early reverse-engineering. The Roland model ID (`00 00 00 00 18`) and one address (`10 00 00 00` = System / Input Source) are confirmed from the [Electra One community thread](https://forum.electra.one/t/sysex-messages-for-boss-re-202-space-echo/2853). Everything else is being discovered against a physical device — see [`docs/sysex-notes.md`](docs/sysex-notes.md) for the running log.
+Codec covers the [full official MIDI Implementation](https://www.zikinf.com/manuels/boss-re-202-space-echo-implementation-midi-en-78875.pdf) plus the undocumented **edit-buffer mirror at `20 00 00 00`** (a writable 33-byte live view of the active memory, discovered by address-sweeping). System + Memory both round-trip byte-exact against device captures. CLI does dump/sync/diff/show/lint/select/identity/schema. WASM bindings render typed in TS. See [`docs/sysex-notes.md`](docs/sysex-notes.md) for the running discovery log.
+
+## CLI
+
+```text
+re202 ports                                  # list MIDI ports
+re202 identity                               # send Universal Identity Request; print device info
+
+re202 dump --system   -o system.yaml         # read 18-byte System area
+re202 dump --memory N -o memory_N.yaml       # read a slot (manual / 1..=127)
+re202 dump --edit     -o edit.yaml           # read the edit-buffer mirror
+re202 dump --all      -o ./dumps/            # everything into a directory
+
+re202 sync --system   -i system.yaml         # write back; --memory / --edit / --all available
+re202 select 7                               # advance to MEMORY 7 via Program Change
+re202 show  memory_N.yaml                    # pretty-print a YAML
+re202 lint  memory_N.yaml                    # validate against the typed model
+re202 diff  a.yaml b.yaml                    # field-level diff between two YAML files
+re202 schema system                          # print the JSON Schema for SystemArea
+```
+
+Global flags: `--port "<substring>"` selects the MIDI port (both directions). `--input-port` / `--output-port` override one direction. `--device-id 0xNN` overrides the default `0x10`.
 
 ## Development
 

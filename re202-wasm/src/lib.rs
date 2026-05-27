@@ -106,24 +106,70 @@ pub fn memory_block_len() -> usize {
 
 #[cfg(test)]
 mod tests {
+    use re202_core::address::{MemorySlot, MEMORY_BLOCK_LEN};
+    use re202_core::system::SYSTEM_AREA_LEN;
+    use re202_core::{Frame, Memory, SystemArea};
     use wasm_bindgen_test::wasm_bindgen_test;
+
+    // Payload bytes from the captured `system_full-dump_defaultish.syx`.
+    const SYSTEM_PAYLOAD: [u8; SYSTEM_AREA_LEN] = [
+        0x00, 0x01, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x04, 0x01, 0x11, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x01,
+    ];
+
+    // Payload bytes from the captured `memory_001_dump.syx`.
+    const MEMORY_1_PAYLOAD: [u8; MEMORY_BLOCK_LEN] = [
+        0x00, 0x04, 0x4D, 0x4D, 0x4D, 0x36, 0x36, 0x36, 0x60, 0x3F, 0x7F, 0x3F, 0x3F, 0x3F, 0x3E,
+        0x3E, 0x3E, 0x06, 0x06, 0x06, 0x00, 0x00, 0x00, 0x52, 0x52, 0x52, 0x01, 0x00, 0x00, 0x01,
+        0x0F, 0x04, 0x00,
+    ];
 
     #[wasm_bindgen_test]
     fn frame_codec_round_trip() {
-        let f = re202_core::Frame::data_set(0x10, [0x10, 0x00, 0x00, 0x00], vec![0x00]);
+        let f = Frame::data_set(0x10, [0x10, 0x00, 0x00, 0x00], vec![0x00]);
         let bytes = f.encode();
-        let decoded = re202_core::Frame::decode(&bytes).unwrap();
+        let decoded = Frame::decode(&bytes).unwrap();
         assert_eq!(f, decoded);
     }
 
     #[wasm_bindgen_test]
     fn system_codec_round_trip() {
-        // Bytes from the captured `system_full-dump_defaultish.syx` payload.
-        let bytes: [u8; 18] = [
-            0x00, 0x01, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x04, 0x01, 0x11, 0x01, 0x01, 0x00,
-            0x00, 0x00, 0x00, 0x01,
-        ];
-        let s = re202_core::SystemArea::from_bytes(&bytes).unwrap();
-        assert_eq!(s.to_bytes().unwrap(), bytes);
+        let s = SystemArea::from_bytes(&SYSTEM_PAYLOAD).unwrap();
+        assert_eq!(s.to_bytes().unwrap(), SYSTEM_PAYLOAD);
+    }
+
+    #[wasm_bindgen_test]
+    fn memory_codec_round_trip_with_tap_time_unpacking() {
+        let m = Memory::from_bytes(&MEMORY_1_PAYLOAD).unwrap();
+        assert_eq!(m.tap_time_ms, 500);
+        assert_eq!(m.to_bytes().unwrap(), MEMORY_1_PAYLOAD);
+    }
+
+    #[wasm_bindgen_test]
+    fn address_helpers_match_spec() {
+        assert_eq!(super::system_base(), vec![0x10, 0x00, 0x00, 0x00]);
+        assert_eq!(super::edit_buffer_base(), vec![0x20, 0x00, 0x00, 0x00]);
+        assert_eq!(super::memory_manual_base(), vec![0x20, 0x10, 0x00, 0x00]);
+        assert_eq!(
+            super::memory_slot_base(1).unwrap(),
+            vec![0x20, 0x20, 0x00, 0x00]
+        );
+        assert_eq!(
+            super::memory_slot_base(127).unwrap(),
+            vec![0x30, 0x00, 0x00, 0x00]
+        );
+        // Carry boundary.
+        assert_eq!(
+            super::memory_slot_base(8).unwrap(),
+            MemorySlot::User(8).base_address().to_vec()
+        );
+        assert!(super::memory_slot_base(0).is_err());
+        assert!(super::memory_slot_base(128).is_err());
+    }
+
+    #[wasm_bindgen_test]
+    fn block_lens_constants() {
+        assert_eq!(super::system_area_len(), SYSTEM_AREA_LEN);
+        assert_eq!(super::memory_block_len(), MEMORY_BLOCK_LEN);
     }
 }
