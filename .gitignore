@@ -14,6 +14,9 @@ tools/explore/*.pyc
 # Captured SysEx that's experimental / not yet promoted to fixtures
 tools/explore/captures/
 
+# Reference photos downloaded for one-off use (accessibility, debugging)
+tools/explore/photos/
+
 # IDE
 .vscode/
 .idea/

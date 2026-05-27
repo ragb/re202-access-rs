@@ -41,10 +41,13 @@ Universal Identity Request (`F0 7E 7F 06 01 F7`) returns:
 | Prefix | Area | Status |
 |---|---|---|
 | `10 00 00 00` | System / global settings (18 params, ends offset `0x11`) | HIGH — bulk-read confirmed, 18 bytes |
+| `20 00 00 00` | **EDIT BUFFER MIRROR** of the currently-active memory | HIGH — discovered + confirmed by device probing, 33 bytes, tracks active slot |
+| `20 10 00 00` | MEMORY MANUAL | HIGH — bulk-read confirmed, 33 bytes |
 | `20 20 00 00` | MEMORY 1 (33-byte block) | HIGH — bulk-read confirmed, 33 bytes |
-| `20 10 00 00` | MEMORY MANUAL | MED — addressed by spec, not yet read |
-| `30 00 00 00` | MEMORY 127 | MED — addressed by spec, not yet read |
-| Other prefixes | undocumented (factory reset, edit-buffer mirror, etc.) | open |
+| `20 30 00 00` | MEMORY 2 | HIGH — bulk-read confirmed (real user-programmed patch) |
+| `30 00 00 00` | MEMORY 127 | HIGH — bulk-read confirmed |
+| `7F 00 00 00` | unknown single byte | LOW — size 1 returns `0x00`, size > 1 returns nothing |
+| Other prefixes | confirmed silent (00, 01, 02, 0F, 1E, 1F, 30 10, 40, 50, 60, 70) | swept on 2026-05-27, no response |
 
 **Memory stride is `00 10 00 00` between consecutive slots, with carry into the high byte.** See `re202_core::address::memory_slot_address`.
 
@@ -124,20 +127,55 @@ The device echoes parameter changes as both DT1 (when MIDI CC Out is on) and CC.
 | 83 | Twist | momentary | |
 | 84 | Warp | momentary | |
 
+## EDIT BUFFER MIRROR at `20 00 00 00` (undocumented, device-verified)
+
+Not in the official MIDI Implementation PDF. Discovered by address-sweep + device probing on 2026-05-27.
+
+- 33-byte region at `20 00 00 00` that **always reflects the currently-active memory's contents.**
+- Confirmed: while the device was on MEMORY 1, RQ1 returned bytes identical to `20 20 00 00`. After advancing to MEMORY 2 via the MEMORY footswitch, the same RQ1 returned bytes identical to `20 30 00 00`. Two distinct data sets — not a coincidence.
+- Use cases:
+  - Read live edits without committing to a slot.
+  - Write live edits without committing to a slot.
+- Open: does writing to `20 00 00 00` propagate to the active slot, or does the change persist only until the user changes slots / presses WRITE?
+
+Captured fixtures: [`edit_buffer_mirrors_memory2.syx`](../re202-core/tests/fixtures/edit_buffer_mirrors_memory2.syx) (snapshot while MEMORY 2 was active — identical to `memory_002_dump.syx` by design).
+
+## CC stream behavior (device-observed)
+
+With `MIDI CC Out = ON`, knob twists emit a **continuous stream of CCs** as the knob is rotated (knobs are continuous encoders, not pots — emit ~30-50 CCs per turn). Spec CC numbers all verified:
+
+| CC | Param | Observed |
+|---|---|---|
+| 17 | Repeat Rate | ✓ |
+| 18 | Intensity | ✓ |
+| 20 | Bass | ✓ |
+| 21 | Treble | ✓ |
+| 23 | Saturation | ✓ |
+| 24 | Wow & Flutter | ✓ |
+| 27 | Effect On/Off | ✓ (left footswitch) |
+| 16/48 pair | Tap Time MSB/LSB | ✓ (fires after the 3rd+ tap; pair sent atomically) |
+| 82 | Tap | ✓ (right footswitch — fires 127 then 0) |
+
+**No CC for**: MODE SELECTOR, ECHO VOL (knob exists but not yet tested), REVERB VOL (not tested), TAPE button, INPUT button, holding MEMORY button (save action).
+
+**Side effect: TAP triggers MIDI Clock streaming.** Undocumented — not gated by `MIDI Sync Source` or `MIDI Realtime Source` System parameters. Becomes active when TAP sets a tempo and stays active until tempo is cleared.
+
 ## Open questions (in priority order)
 
-1. **MEMORY MANUAL at `20 10 00 00`.** Verify by RQ1-reading and comparing to live device knob positions.
-2. **MEMORY 127 at `30 00 00 00`.** Verify the high-end stride by RQ1-reading.
+1. **Is the edit buffer at `20 00 00 00` writable**, and if so does writing propagate to the active slot or only to the live audio?
+2. **What is at `7F 00 00 00`?** Single-byte region returning `0x00`. Device-info? Bank-select pointer? Test writes carefully.
 3. **Per-memory Time Mode at offset `0x20`** vs. System Time Mode at `0x06` — which wins?
-4. **Edit-buffer mirror.** Is there a region (e.g. `00 xx xx xx` or `1F xx xx xx`) reflecting the currently-edited but unsaved patch?
-5. **Save / load / factory-reset commands.** Spec doesn't document a "save edit to memory N" SysEx; observe what happens when the user presses the device's WRITE button.
-6. **Where does the firmware-v1.10 Device ID setting live?** It's a UI parameter in v1.10 firmware but RQ1 to `10 00 00 12` returned no extra bytes. Maybe in a separate `1F xx xx xx` setup area, or read-only via Identity Reply only.
-7. **Inbound device ID 0x7F (broadcast).** Spec says supported; verify the device responds to it.
+4. **Save / load / factory-reset commands.** Spec doesn't document; holding MEMORY ("WRITE") is silent over MIDI. So if we want to programmatically save current edits to a slot, we'd need to discover the command or use the device's button.
+5. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
+6. **PC# → memory mapping**. We observed PC#0 fire when the user stomped MEMORY. Confirm whether PC#0=MANUAL or PC#0=MEMORY 1.
+7. **Inbound device ID 0x7F (broadcast).** Spec says supported; not yet device-verified.
 
 ## Refuted / dead ends
 
 - ~~Memory slots addressed as `20 NN xx xx`~~ — refuted by the spec (stride is `00 10 00 00`).
 - ~~Firmware-v1.10 Device ID lives at System offset `0x12`~~ — refuted on hardware 2026-05-27; oversized RQ1 truncates at offset `0x11`.
+- ~~Edit-buffer mirror at `00 xx xx xx`, `01 xx xx xx`, `1E xx xx xx`, or `1F xx xx xx`~~ — refuted by address sweep; the mirror lives at `20 00 00 00` instead.
+- ~~Roland-convention setup area at `40-70 xx xx xx`~~ — refuted by sweep; addresses silent.
 
 ## Observed device state (capture session 2026-05-27)
 

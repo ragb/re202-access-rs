@@ -19,6 +19,18 @@ pub const SYSTEM_BASE: [u8; 4] = [0x10, 0x00, 0x00, 0x00];
 /// Base address of MEMORY MANUAL (the live "manual mode" slot).
 pub const MEMORY_MANUAL_BASE: [u8; 4] = [0x20, 0x10, 0x00, 0x00];
 
+/// Base address of the **edit-buffer mirror** — a live, read/write mirror of the
+/// currently-active memory's 33-byte block.
+///
+/// Not in the official MIDI Implementation PDF — discovered by device probing on
+/// 2026-05-27. RQ1 to this address returns the same 33 bytes as RQ1 to the
+/// currently-active slot's base address, and the contents update when the user
+/// switches slots via the MEMORY footswitch. Verified: changing from MEMORY 1
+/// to MEMORY 2 caused the mirror's contents to swap to match MEMORY 2.
+///
+/// Useful for live editing without committing to a slot.
+pub const EDIT_BUFFER_BASE: [u8; 4] = [0x20, 0x00, 0x00, 0x00];
+
 /// Per-memory block size in bytes (offsets `00 00`..`00 20`, inclusive).
 pub const MEMORY_BLOCK_LEN: usize = 33;
 
@@ -40,8 +52,9 @@ impl AddressSpace {
     pub fn classify(address: [u8; 4]) -> Self {
         match address[0] {
             0x10 => Self::System,
-            // Memory MANUAL is at 0x20 0x10 ... and slots 1..=127 extend through
-            // 0x30 0x00 0x00 0x00 (slot 127). Everything in [0x20, 0x30] is memory.
+            // 0x20 0x00 ... = edit-buffer mirror;
+            // 0x20 0x10 ... = MEMORY MANUAL;
+            // 0x20 0x20 ... through 0x30 0x00 ... = MEMORY 1..=127.
             0x20 | 0x30 => Self::Memory,
             _ => Self::Unknown,
         }
