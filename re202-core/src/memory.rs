@@ -15,6 +15,8 @@ use crate::system::TimeMode;
 /// Used for both stored slots (MEMORY MANUAL, MEMORY 1..=127) and the
 /// edit-buffer mirror at `20 00 00 00`. The address is what differentiates;
 /// the payload format is the same.
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Memory {
     pub tape: Tape,
@@ -37,6 +39,8 @@ pub struct Memory {
 }
 
 /// A value-with-expression-pedal-range parameter (Repeat Rate, Intensity, etc.).
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RangedParam {
     pub value: u8,
@@ -74,6 +78,8 @@ impl RangedParam {
     }
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Tape {
@@ -83,6 +89,8 @@ pub enum Tape {
 
 /// 12 head-combination modes. Numbered to match the device's UI (Mode 1..12).
 /// Wire byte = `mode_number - 1` (0..=11).
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Mode {

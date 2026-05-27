@@ -14,6 +14,8 @@ pub const SYSTEM_AREA_LEN: usize = 18;
 ///
 /// Fields are ordered the same way they appear in the byte layout. Grouped:
 /// `direct.*` covers offsets 0x03..=0x04; `midi.*` covers offsets 0x09..=0x11.
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemArea {
     pub input_source: InputSource,
@@ -28,12 +30,16 @@ pub struct SystemArea {
     pub midi: MidiSettings,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectSettings {
     pub on: bool,
     pub mode: DirectMode,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MidiSettings {
     pub rx_channel: MidiChannel,
@@ -49,6 +55,8 @@ pub struct MidiSettings {
 
 // === enums ===
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InputSource {
@@ -56,6 +64,8 @@ pub enum InputSource {
     Line,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Ctl1Function {
@@ -66,6 +76,8 @@ pub enum Ctl1Function {
     Warp,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Ctl2Function {
@@ -76,6 +88,8 @@ pub enum Ctl2Function {
     Twist,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DirectMode {
@@ -83,6 +97,8 @@ pub enum DirectMode {
     Re201Simulate,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TimeMode {
@@ -90,6 +106,8 @@ pub enum TimeMode {
     Long,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReverbType {
@@ -103,6 +121,8 @@ pub enum ReverbType {
 /// MIDI Rx channel — `off` or `1..=16`.
 ///
 /// YAML: `off` or an integer 1..=16.
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged, rename_all = "snake_case")]
 pub enum MidiChannel {
@@ -110,6 +130,8 @@ pub enum MidiChannel {
     Symbolic(MidiChannelSymbol),
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MidiChannelSymbol {
@@ -119,6 +141,8 @@ pub enum MidiChannelSymbol {
 /// MIDI Tx channel — `off`, `1..=16`, or `rx` (follows RX channel).
 ///
 /// YAML: `off`, `rx`, or an integer 1..=16.
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum TxChannel {
@@ -126,6 +150,8 @@ pub enum TxChannel {
     Symbolic(TxChannelSymbol),
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TxChannelSymbol {
@@ -133,6 +159,8 @@ pub enum TxChannelSymbol {
     Rx,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SyncSource {
@@ -140,6 +168,8 @@ pub enum SyncSource {
     Auto,
 }
 
+#[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
+#[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RealtimeSource {

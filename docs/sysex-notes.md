@@ -177,13 +177,16 @@ With `MIDI CC Out = ON`, knob twists emit a **continuous stream of CCs** as the 
 
 ## PC# memory mapping (confirmed)
 
-Verified 2026-05-27 by sending PC#0, 1, 2 in sequence and reading the edit buffer:
+Verified 2026-05-27 (and corrected on a second device observation):
 
-- **PC#1 → MEMORY 1** (edit buffer matched MEMORY 1's stored bytes)
-- **PC#2 → MEMORY 2** (matched)
-- **PC#0 → did not match MANUAL, MEMORY 1, or MEMORY 2.** Likely a no-op on this firmware, or means something other than "MANUAL slot." Treat PC#0 as undefined for slot selection; use PC#1..=127 for User memories.
+- **PC#0 → MEMORY MANUAL**
+- **PC#1 → MEMORY 1**
+- **PC#2 → MEMORY 2**
+- ... up to PC#127 → MEMORY 127.
 
-The CLI's `re202 select N` sends PC#N on channel 1. To select MANUAL via the device, use the front-panel MEMORY footswitch.
+The CLI's `re202 select N` sends PC#N on channel 1: `select manual` → PC#0, `select 1` → PC#1, etc.
+
+(An earlier test in this session reported PC#0 as "unknown" — that comparison was against a stale MEMORY MANUAL snapshot taken much earlier when the device state had since changed. The device behavior is consistent with the 0-indexed convention used here.)
 
 ## Broadcast device id 0x7F (confirmed)
 
@@ -206,8 +209,7 @@ Single byte returning `0x00`. RQ1 with size > 1 returns nothing. Writing to it i
 
 1. **Slot persistence across power cycles**: direct DT1 writes to a slot's address succeed and are reflected by RQ1, but we haven't power-cycled the device to confirm they survive.
 2. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
-3. **What does PC#0 do?** Edit buffer didn't match MANUAL afterward — possibly no-op, possibly something else.
-4. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
+3. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
 
 ## Refuted / dead ends
 
