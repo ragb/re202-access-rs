@@ -119,15 +119,13 @@ pub enum Mode {
     M6,
     /// Heads 1 + 2 + 3.
     M7,
-    /// Heads 1 + 2 + 3 + 4.
+    /// Heads 1 + 4.
     M8,
-    /// Heads 1 + 3 + 4. (Modes 9, 10, 11 are unverified — two independent
-    /// readings of the reference-manual head table disagreed. Audio test
-    /// needed; see open question in `docs/sysex-notes.md`.)
+    /// Heads 3 + 4.
     M9,
-    /// Heads 1 + 2 + 4. (Unverified — see Mode 9.)
+    /// Heads 1 + 3 + 4.
     M10,
-    /// Heads 2 + 3 + 4. (Unverified — see Mode 9.)
+    /// Heads 1 + 2 + 4.
     M11,
     /// All four heads, dense arrangement (head positions optimized for thicker tail).
     M12,
@@ -135,8 +133,9 @@ pub enum Mode {
 
 impl Mode {
     /// Which playback heads are active in this mode. Returns a slice of head
-    /// numbers (1..=4). Mode 12 returns the same set as Mode 8 — they differ
-    /// only in head-spacing internals.
+    /// numbers (1..=4). Authoritative source: the official RE-202 reference
+    /// manual page "Head Combinations for Each Mode" (parsed from raw HTML to
+    /// avoid summarizer ambiguity).
     pub fn active_heads(self) -> &'static [u8] {
         match self {
             Mode::M1 => &[1],
@@ -146,10 +145,10 @@ impl Mode {
             Mode::M5 => &[2, 3],
             Mode::M6 => &[1, 3],
             Mode::M7 => &[1, 2, 3],
-            Mode::M8 => &[1, 2, 3, 4],
-            Mode::M9 => &[1, 3, 4],
-            Mode::M10 => &[1, 2, 4],
-            Mode::M11 => &[2, 3, 4],
+            Mode::M8 => &[1, 4],
+            Mode::M9 => &[3, 4],
+            Mode::M10 => &[1, 3, 4],
+            Mode::M11 => &[1, 2, 4],
             Mode::M12 => &[1, 2, 3, 4],
         }
     }
@@ -349,10 +348,19 @@ mod tests {
 
     #[test]
     fn mode_active_heads_table() {
+        // Authoritative values from the reference manual's
+        // "Head Combinations for Each Mode" page.
         assert_eq!(Mode::M1.active_heads(), &[1]);
+        assert_eq!(Mode::M2.active_heads(), &[2]);
+        assert_eq!(Mode::M3.active_heads(), &[3]);
         assert_eq!(Mode::M4.active_heads(), &[1, 2]);
-        assert_eq!(Mode::M8.active_heads(), &[1, 2, 3, 4]);
-        assert_eq!(Mode::M11.active_heads(), &[2, 3, 4]);
+        assert_eq!(Mode::M5.active_heads(), &[2, 3]);
+        assert_eq!(Mode::M6.active_heads(), &[1, 3]);
+        assert_eq!(Mode::M7.active_heads(), &[1, 2, 3]);
+        assert_eq!(Mode::M8.active_heads(), &[1, 4]);
+        assert_eq!(Mode::M9.active_heads(), &[3, 4]);
+        assert_eq!(Mode::M10.active_heads(), &[1, 3, 4]);
+        assert_eq!(Mode::M11.active_heads(), &[1, 2, 4]);
         assert_eq!(Mode::M12.active_heads(), &[1, 2, 3, 4]);
     }
 
