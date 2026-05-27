@@ -81,6 +81,9 @@ pub enum Command {
         /// Which schema: `system` or `memory`.
         kind: String,
     },
+
+    /// Send a Universal Identity Request and print the device's reply.
+    Identity,
 }
 
 #[derive(clap::Args, Debug)]
@@ -183,6 +186,56 @@ pub fn run(cli: Cli) -> Result<()> {
         }
 
         Command::Schema { kind } => emit_schema(&kind),
+
+        Command::Identity => {
+            let mut session = open_session(&session_args)?;
+            identity(&mut session)
+        }
+    }
+}
+
+fn identity(session: &mut MidiSession) -> Result<()> {
+    let reply = session.identity_request(REQUEST_TIMEOUT)?;
+    let hex: String = reply
+        .iter()
+        .map(|b| format!("{b:02X}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    println!("reply: {hex}");
+    // Parse the standard fields:
+    //   F0 7E [dev] 06 02 [manuf] [family-lo family-hi] [number-lo number-hi]
+    //   [sw1 sw2 sw3 sw4] F7
+    if reply.len() < 15 {
+        anyhow::bail!("identity reply too short ({} bytes)", reply.len());
+    }
+    let dev = reply[2];
+    let manuf = reply[5];
+    let family = [reply[6], reply[7]];
+    let number = [reply[8], reply[9]];
+    let sw = [reply[10], reply[11], reply[12], reply[13]];
+    println!("  device id:        0x{dev:02X}");
+    println!(
+        "  manufacturer:     0x{manuf:02X} ({})",
+        manufacturer_name(manuf)
+    );
+    println!("  family code:      {family:02X?}");
+    println!("  family number:    {number:02X?}");
+    println!(
+        "  software version: {sw:02X?} (decimal: {} {} {} {})",
+        sw[0], sw[1], sw[2], sw[3]
+    );
+    if manuf == 0x41 && family == [0x18, 0x04] {
+        println!("  -> matches RE-202 (Roland family 0x0418)");
+    }
+    Ok(())
+}
+
+fn manufacturer_name(id: u8) -> &'static str {
+    match id {
+        0x41 => "Roland",
+        0x42 => "Korg",
+        0x47 => "Akai",
+        _ => "unknown",
     }
 }
 

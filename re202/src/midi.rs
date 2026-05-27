@@ -148,6 +148,40 @@ impl MidiSession {
         })
     }
 
+    /// Send the Universal MMA Identity Request and wait for the device's
+    /// Identity Reply. Returns the raw reply bytes (including F0..F7).
+    pub fn identity_request(&mut self, timeout: Duration) -> Result<Vec<u8>, MidiError> {
+        self.drain();
+        // F0 7E 7F 06 01 F7 — Universal non-realtime, broadcast device id, Identity Request
+        self.send_raw(&[0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7])?;
+        let deadline = Instant::now() + timeout;
+        loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return Err(MidiError::Timeout(timeout));
+            }
+            let raw = match self.rx.recv_timeout(remaining) {
+                Ok(b) => b,
+                Err(mpsc::RecvTimeoutError::Timeout) => return Err(MidiError::Timeout(timeout)),
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    return Err(MidiError::Send {
+                        reason: "input channel disconnected".to_string(),
+                    });
+                }
+            };
+            // Identity Reply: F0 7E [dev] 06 02 ...
+            if raw.len() >= 6
+                && raw[0] == 0xF0
+                && raw[1] == 0x7E
+                && raw[3] == 0x06
+                && raw[4] == 0x02
+            {
+                return Ok(raw);
+            }
+            // Echo of our own request, or unrelated traffic — keep listening.
+        }
+    }
+
     /// Send a Data Request 1 and wait up to `timeout` for the matching DT1 reply.
     ///
     /// `size` is encoded as a 4-byte 7-bit-safe big-endian value (Roland convention).
