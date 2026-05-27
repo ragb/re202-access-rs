@@ -59,6 +59,10 @@ pub enum Command {
         /// Input path: a YAML file, or a directory previously written by `dump --all`.
         #[arg(short = 'i', long)]
         input: PathBuf,
+        /// After writing, read the same address back and verify the bytes match.
+        /// Catches silent write failures and confirms the device accepted the data.
+        #[arg(long)]
+        verify: bool,
     },
 
     /// Compare two configurations (file vs. file). YAML on both sides.
@@ -166,11 +170,15 @@ pub fn run(cli: Cli) -> Result<()> {
             }
         }
 
-        Command::Sync { target, input } => {
+        Command::Sync {
+            target,
+            input,
+            verify,
+        } => {
             let mut session = open_session(&session_args)?;
             match SingleTarget::parse(&target)? {
-                Some(t) => sync_single(&mut session, t, &input),
-                None => sync_all(&mut session, &input),
+                Some(t) => sync_single(&mut session, t, &input, verify),
+                None => sync_all(&mut session, &input, verify),
             }
         }
 
@@ -329,46 +337,98 @@ fn dump_all(session: &mut MidiSession, dir: &Path) -> Result<()> {
 
 // === sync ===
 
-fn sync_single(session: &mut MidiSession, target: SingleTarget, input: &Path) -> Result<()> {
-    match target {
+fn sync_single(
+    session: &mut MidiSession,
+    target: SingleTarget,
+    input: &Path,
+    verify: bool,
+) -> Result<()> {
+    let (address, bytes, label): ([u8; 4], Vec<u8>, String) = match target {
         SingleTarget::System => {
             let system = yaml_io::read_system(input)?;
-            let bytes = system.to_bytes()?;
-            session.send_dt1(SYSTEM_BASE, &bytes)?;
-            println!("sent System area from {}", input.display());
+            (
+                SYSTEM_BASE,
+                system.to_bytes()?.to_vec(),
+                "System area".to_string(),
+            )
         }
         SingleTarget::EditBuffer => {
             let memory = yaml_io::read_memory(input)?;
-            let bytes = memory.to_bytes()?;
-            session.send_dt1(EDIT_BUFFER_BASE, &bytes)?;
-            println!("sent edit buffer from {}", input.display());
+            (
+                EDIT_BUFFER_BASE,
+                memory.to_bytes()?.to_vec(),
+                "edit buffer".to_string(),
+            )
         }
         SingleTarget::Memory(slot) => {
             let memory = yaml_io::read_memory(input)?;
-            let bytes = memory.to_bytes()?;
-            session.send_dt1(slot.base_address(), &bytes)?;
-            println!("sent {} from {}", slot_label(slot), input.display());
+            (
+                slot.base_address(),
+                memory.to_bytes()?.to_vec(),
+                slot_label(slot),
+            )
+        }
+    };
+
+    session.send_dt1(address, &bytes)?;
+    println!("sent {label} from {}", input.display());
+
+    if verify {
+        // Brief pause to let the device finish processing the write before we
+        // read back. Empirically the RE-202 is ready immediately, but a small
+        // gap costs nothing and helps slower interfaces.
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let frame = session.request(address, bytes.len() as u32, REQUEST_TIMEOUT)?;
+        if frame.data == bytes {
+            println!("  verified: read-back matches ({} bytes)", bytes.len());
+        } else {
+            let expected = hex_short(&bytes);
+            let got = hex_short(&frame.data);
+            bail!(
+                "verify FAILED at {address:02X?}:\n    expected: {expected}\n    got:      {got}"
+            );
         }
     }
     Ok(())
 }
 
-fn sync_all(session: &mut MidiSession, dir: &Path) -> Result<()> {
-    sync_single(session, SingleTarget::System, &dir.join("system.yaml"))?;
+fn sync_all(session: &mut MidiSession, dir: &Path, verify: bool) -> Result<()> {
+    sync_single(
+        session,
+        SingleTarget::System,
+        &dir.join("system.yaml"),
+        verify,
+    )?;
     sync_single(
         session,
         SingleTarget::Memory(MemorySlot::Manual),
         &dir.join("memory_manual.yaml"),
+        verify,
     )?;
     for n in 1u8..=127 {
         let path = dir.join(format!("memory_{n:03}.yaml"));
         if path.exists() {
-            sync_single(session, SingleTarget::Memory(MemorySlot::User(n)), &path)?;
+            sync_single(
+                session,
+                SingleTarget::Memory(MemorySlot::User(n)),
+                &path,
+                verify,
+            )?;
         }
     }
     // edit.yaml deliberately not synced as part of --all: it's a snapshot of
     // the active memory at dump time, not a separate stored value.
     Ok(())
+}
+
+fn hex_short(bytes: &[u8]) -> String {
+    const MAX: usize = 24;
+    let parts: Vec<String> = bytes.iter().take(MAX).map(|b| format!("{b:02X}")).collect();
+    let mut s = parts.join(" ");
+    if bytes.len() > MAX {
+        s.push_str(&format!(" ... ({} more)", bytes.len() - MAX));
+    }
+    s
 }
 
 // === show, lint, diff, select ===

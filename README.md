@@ -28,6 +28,7 @@ re202 dump --edit     -o edit.yaml           # read the edit-buffer mirror
 re202 dump --all      -o ./dumps/            # everything into a directory
 
 re202 sync --system   -i system.yaml         # write back; --memory / --edit / --all available
+re202 sync --memory 7 -i memory_007.yaml --verify    # write + read-back + compare
 re202 select 7                               # advance to MEMORY 7 via Program Change
 re202 show  memory_N.yaml                    # pretty-print a YAML
 re202 lint  memory_N.yaml                    # validate against the typed model
