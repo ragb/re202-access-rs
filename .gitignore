@@ -28,6 +28,10 @@ tools/explore/dumps/
 # Claude Code per-project state
 .claude/
 
+# Temp commit-message files used because PowerShell heredoc breaks on
+# multi-line `-m` with special characters
+*_commit_msg.txt
+
 # OS
 .DS_Store
 Thumbs.db
