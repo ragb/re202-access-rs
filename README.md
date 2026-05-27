@@ -93,4 +93,4 @@ Findings get promoted into `re202-core` with byte-exact round-trip tests against
 
 ## License
 
-Dual-licensed under MIT or Apache-2.0 at your option.
+[GPL-3.0-or-later](LICENSE). See [LICENSE](LICENSE) for the full text.

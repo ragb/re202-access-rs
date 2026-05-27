@@ -4,3 +4,6 @@
 
 # SysEx fixtures are binary - never line-ending convert.
 *.syx binary
+
+# License text — store with LF, never auto-convert.
+LICENSE text eol=lf
