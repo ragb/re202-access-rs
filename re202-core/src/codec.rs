@@ -20,4 +20,7 @@ pub enum CodecError {
         value: u16,
         valid: &'static str,
     },
+
+    #[error("YAML: {0}")]
+    Yaml(String),
 }

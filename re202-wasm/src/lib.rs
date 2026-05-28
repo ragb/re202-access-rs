@@ -9,7 +9,14 @@ use re202_core::address::{
     SYSTEM_BASE,
 };
 use re202_core::system::SYSTEM_AREA_LEN;
-use re202_core::{Frame, Memory, SystemArea};
+use re202_core::yaml::{
+    memory_from_yaml_str, memory_to_yaml_string, system_from_yaml_str, system_to_yaml_string,
+};
+use re202_core::{
+    classify_inbound as core_classify_inbound, Frame, InboundMessage, Memory, Mode, SystemArea,
+};
+use serde::Serialize;
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 // === Frame (raw codec) ===
@@ -59,6 +66,144 @@ pub fn encode_memory(memory: Memory) -> Result<Vec<u8>, JsError> {
 #[wasm_bindgen(js_name = decodeMemory)]
 pub fn decode_memory(bytes: &[u8]) -> Result<Memory, JsError> {
     Memory::from_bytes(bytes).map_err(|e| JsError::new(&e.to_string()))
+}
+
+// === YAML round-trip ===
+
+#[wasm_bindgen(js_name = memoryToYaml)]
+pub fn memory_to_yaml(memory: Memory) -> Result<String, JsError> {
+    memory_to_yaml_string(&memory).map_err(|e| JsError::new(&e.to_string()))
+}
+
+#[wasm_bindgen(js_name = memoryFromYaml)]
+pub fn memory_from_yaml(text: &str) -> Result<Memory, JsError> {
+    memory_from_yaml_str(text).map_err(|e| JsError::new(&e.to_string()))
+}
+
+#[wasm_bindgen(js_name = systemToYaml)]
+pub fn system_to_yaml(system: SystemArea) -> Result<String, JsError> {
+    system_to_yaml_string(&system).map_err(|e| JsError::new(&e.to_string()))
+}
+
+#[wasm_bindgen(js_name = systemFromYaml)]
+pub fn system_from_yaml(text: &str) -> Result<SystemArea, JsError> {
+    system_from_yaml_str(text).map_err(|e| JsError::new(&e.to_string()))
+}
+
+// === Inbound classification ===
+//
+// Mirrors `re202_core::InboundMessage` with a tsify-friendly tagged-union
+// shape and `Vec<u8>` payloads (which render as `Uint8Array` in JS when the
+// generated glue copies them across the wasm boundary).
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum WasmInboundMessage {
+    SystemDataSet {
+        device_id: u8,
+        #[tsify(type = "Uint8Array")]
+        address: Vec<u8>,
+        #[tsify(type = "Uint8Array")]
+        data: Vec<u8>,
+    },
+    MemoryDataSet {
+        device_id: u8,
+        #[tsify(type = "Uint8Array")]
+        address: Vec<u8>,
+        #[tsify(type = "Uint8Array")]
+        data: Vec<u8>,
+    },
+    UnknownDataSet {
+        device_id: u8,
+        #[tsify(type = "Uint8Array")]
+        address: Vec<u8>,
+        #[tsify(type = "Uint8Array")]
+        data: Vec<u8>,
+    },
+    DataRequest {
+        device_id: u8,
+        #[tsify(type = "Uint8Array")]
+        address: Vec<u8>,
+        #[tsify(type = "Uint8Array")]
+        size: Vec<u8>,
+    },
+    UnparseableSysEx {
+        #[tsify(type = "Uint8Array")]
+        bytes: Vec<u8>,
+        error: String,
+    },
+    NonSysEx {
+        #[tsify(type = "Uint8Array")]
+        bytes: Vec<u8>,
+    },
+}
+
+impl From<InboundMessage> for WasmInboundMessage {
+    fn from(m: InboundMessage) -> Self {
+        match m {
+            InboundMessage::SystemDataSet {
+                device_id,
+                address,
+                data,
+            } => Self::SystemDataSet {
+                device_id,
+                address: address.to_vec(),
+                data,
+            },
+            InboundMessage::MemoryDataSet {
+                device_id,
+                address,
+                data,
+            } => Self::MemoryDataSet {
+                device_id,
+                address: address.to_vec(),
+                data,
+            },
+            InboundMessage::UnknownDataSet {
+                device_id,
+                address,
+                data,
+            } => Self::UnknownDataSet {
+                device_id,
+                address: address.to_vec(),
+                data,
+            },
+            InboundMessage::DataRequest {
+                device_id,
+                address,
+                size,
+            } => Self::DataRequest {
+                device_id,
+                address: address.to_vec(),
+                size,
+            },
+            InboundMessage::UnparseableSysEx { bytes, error } => Self::UnparseableSysEx {
+                bytes,
+                error: error.to_string(),
+            },
+            InboundMessage::NonSysEx(bytes) => Self::NonSysEx { bytes },
+        }
+    }
+}
+
+/// Classify a complete inbound MIDI byte sequence into a tagged-union variant.
+#[wasm_bindgen(js_name = classifyInbound)]
+pub fn classify_inbound(bytes: &[u8]) -> WasmInboundMessage {
+    core_classify_inbound(bytes).into()
+}
+
+// === Mode metadata ===
+
+/// Active playback heads for a given mode, in head-number order (1..=4).
+#[wasm_bindgen(js_name = modeActiveHeads)]
+pub fn mode_active_heads(mode: Mode) -> Vec<u8> {
+    mode.active_heads().to_vec()
+}
+
+/// User-facing mode number (1..=12) — matches the pedal's display.
+#[wasm_bindgen(js_name = modeNumber)]
+pub fn mode_number(mode: Mode) -> u8 {
+    mode.number()
 }
 
 // === Address helpers ===
@@ -143,6 +288,24 @@ mod tests {
         let m = Memory::from_bytes(&MEMORY_1_PAYLOAD).unwrap();
         assert_eq!(m.tap_time_ms, 500);
         assert_eq!(m.to_bytes().unwrap(), MEMORY_1_PAYLOAD);
+    }
+
+    #[wasm_bindgen_test]
+    fn memory_yaml_round_trip_via_wasm() {
+        let m = Memory::from_bytes(&MEMORY_1_PAYLOAD).unwrap();
+        let y = super::memory_to_yaml(m.clone()).unwrap();
+        let back = super::memory_from_yaml(&y).unwrap();
+        assert_eq!(m, back);
+        assert_eq!(back.to_bytes().unwrap(), MEMORY_1_PAYLOAD);
+    }
+
+    #[wasm_bindgen_test]
+    fn system_yaml_round_trip_via_wasm() {
+        let s = SystemArea::from_bytes(&SYSTEM_PAYLOAD).unwrap();
+        let y = super::system_to_yaml(s.clone()).unwrap();
+        let back = super::system_from_yaml(&y).unwrap();
+        assert_eq!(s, back);
+        assert_eq!(back.to_bytes().unwrap(), SYSTEM_PAYLOAD);
     }
 
     #[wasm_bindgen_test]

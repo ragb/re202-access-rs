@@ -1,9 +1,15 @@
 //! Path-aware YAML helpers for the typed core models.
+//!
+//! The string codec lives in `re202_core::yaml`; this module adds the file I/O
+//! plus the `# yaml-language-server: $schema=...` header line on write.
 
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use re202_core::yaml::{MEMORY_YAML_HEADER, SYSTEM_YAML_HEADER};
+use re202_core::yaml::{
+    memory_from_yaml_str, memory_to_yaml_string, system_from_yaml_str, system_to_yaml_string,
+    MEMORY_YAML_HEADER, SYSTEM_YAML_HEADER,
+};
 use re202_core::{Memory, SystemArea};
 
 fn write_yaml(path: &Path, header: &str, body: &str) -> Result<()> {
@@ -21,21 +27,21 @@ fn write_yaml(path: &Path, header: &str, body: &str) -> Result<()> {
 }
 
 pub fn write_system(path: &Path, system: &SystemArea) -> Result<()> {
-    let body = serde_yaml::to_string(system).context("serialize SystemArea")?;
+    let body = system_to_yaml_string(system).context("serialize SystemArea")?;
     write_yaml(path, SYSTEM_YAML_HEADER, &body)
 }
 
 pub fn write_memory(path: &Path, memory: &Memory) -> Result<()> {
-    let body = serde_yaml::to_string(memory).context("serialize Memory")?;
+    let body = memory_to_yaml_string(memory).context("serialize Memory")?;
     write_yaml(path, MEMORY_YAML_HEADER, &body)
 }
 
 pub fn read_system(path: &Path) -> Result<SystemArea> {
     let s = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-    serde_yaml::from_str(&s).with_context(|| format!("parsing SystemArea from {}", path.display()))
+    system_from_yaml_str(&s).with_context(|| format!("parsing SystemArea from {}", path.display()))
 }
 
 pub fn read_memory(path: &Path) -> Result<Memory> {
     let s = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-    serde_yaml::from_str(&s).with_context(|| format!("parsing Memory from {}", path.display()))
+    memory_from_yaml_str(&s).with_context(|| format!("parsing Memory from {}", path.display()))
 }
