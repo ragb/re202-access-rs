@@ -192,14 +192,13 @@ The CLI's `re202 select N` sends PC#N on channel 1: `select manual` → PC#0, `s
 
 Verified 2026-05-27: RQ1 with `dd = 0x7F` to a known address returned a normal DT1 reply from the device. **The device responds with its own configured device id (`0x10`) in the reply**, not the broadcast id. Useful for discovery when the device id is unknown.
 
-## Time Mode precedence (partial — independence confirmed, audio precedence open)
+## Time Mode precedence (confirmed)
 
-System Time Mode (`10 00 00 06`) and per-memory Time Mode (memory offset `0x20`) are **independent storage**:
+System Time Mode (`10 00 00 06`) and per-memory Time Mode (memory offset `0x20`) are independent storage — writing one does not propagate to the other in either direction (verified 2026-05-27).
 
-- Wrote System = LONG via DT1; the active memory's Time Mode stayed NORMAL (no propagation).
-- Wrote per-memory Time Mode = NORMAL via DT1 (also unchanged in this direction).
+**Per-memory takes precedence for the audio max-tap clamp** (1000 ms NORMAL vs 2000 ms LONG). User-confirmed 2026-05-28. The System value behaves as a default — probably what MANUAL falls back to and what new memories are initialized with — but the active memory's stored value is what determines the actual tap-time ceiling.
 
-Which one controls the audio max-tap-time clamp (1000 ms NORMAL vs. 2000 ms LONG) was not audio-tested. Most likely the per-memory value applies when a slot is active and System applies for MANUAL — but unverified.
+Practical takeaway for the editor: when showing tap time to the user, validate against the per-memory Time Mode, not the System one.
 
 ## What is at `7F 00 00 00`? (still opaque)
 
@@ -213,8 +212,7 @@ So: **direct DT1 writes to memory slot addresses are persisted to non-volatile s
 
 ## Open questions (remaining)
 
-1. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
-2. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
+1. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply. Hard to settle without testing against a known-v1.10 device that has the UI-visible Device ID parameter set to something other than the default.
 ## Mode head combinations (confirmed from raw HTML of the reference manual)
 
 | Mode | Heads | Mode | Heads |
