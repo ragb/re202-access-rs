@@ -205,11 +205,16 @@ Which one controls the audio max-tap-time clamp (1000 ms NORMAL vs. 2000 ms LONG
 
 Single byte returning `0x00`. RQ1 with size > 1 returns nothing. Writing to it is risky and not yet tested. Treat as off-limits unless someone has a reason.
 
+## Slot persistence across power cycle (confirmed)
+
+Verified 2026-05-28. Wrote `bass.value = 50` to MEMORY 127 via DT1 + `--verify`, then power-cycled the device (unplugged ~5s, replugged, waited for boot). Re-reading the slot returned the written value, not the original.
+
+So: **direct DT1 writes to memory slot addresses are persisted to non-volatile storage immediately.** No separate save command needed; the device's WRITE button is only relevant when you've been editing via the front-panel knobs and want to commit the current edit-buffer state to a slot.
+
 ## Open questions (remaining)
 
-1. **Slot persistence across power cycles**: direct DT1 writes to a slot's address succeed and are reflected by RQ1, but we haven't power-cycled the device to confirm they survive.
-2. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
-3. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
+1. **Audio precedence of Time Mode**: System vs per-memory — which one actually clamps tap time?
+2. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply.
 ## Mode head combinations (confirmed from raw HTML of the reference manual)
 
 | Mode | Heads | Mode | Heads |
