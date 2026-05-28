@@ -74,12 +74,6 @@ Universal Identity Request (`F0 7E 7F 06 01 F7`) returns:
 | `10` | MIDI Realtime Source | 0..1 | 0=Internal, 1=MIDI |
 | `11` | MIDI Thru | 0..1 | |
 
-### Firmware-v1.10 Device-ID extension — REFUTED on this device
-
-The [v1.10 Reference Manual](https://static.roland.com/manuals/re-202_reference_v110/eng/37135781.html) lists a **Device ID** UI parameter the v1.00 spec PDF doesn't describe. Hypothesis was that it lived at offset `0x12` in System.
-
-Refuted (2026-05-27): RQ1 to `10 00 00 00` with size `0x20` returned **exactly 18 bytes** — the device truncates at the documented end of the region. No hidden bytes at `0x12`+ on this firmware. The Device ID UI control either lives in some other (untested) address space, or isn't exposed via SysEx at all and is set only by the front-panel mode switch.
-
 ## Memory block (per slot) — 33 bytes, offsets `00 00`..`00 20`
 
 | Offset | Name | Range | Notes |
@@ -210,9 +204,6 @@ Verified 2026-05-28. Wrote `bass.value = 50` to MEMORY 127 via DT1 + `--verify`,
 
 So: **direct DT1 writes to memory slot addresses are persisted to non-volatile storage immediately.** No separate save command needed; the device's WRITE button is only relevant when you've been editing via the front-panel knobs and want to commit the current edit-buffer state to a slot.
 
-## Open questions (remaining)
-
-1. **Where does the firmware-v1.10 Device ID setting live?** RQ1 to `10 00 00 12` returned no extra bytes. May be in `7F xx xx xx` or read-only via Identity Reply. Hard to settle without testing against a known-v1.10 device that has the UI-visible Device ID parameter set to something other than the default.
 ## Mode head combinations (confirmed from raw HTML of the reference manual)
 
 | Mode | Heads | Mode | Heads |
