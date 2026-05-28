@@ -46,7 +46,7 @@ Universal Identity Request (`F0 7E 7F 06 01 F7`) returns:
 | `20 20 00 00` | MEMORY 1 (33-byte block) | HIGH — bulk-read confirmed, 33 bytes |
 | `20 30 00 00` | MEMORY 2 | HIGH — bulk-read confirmed (real user-programmed patch) |
 | `30 00 00 00` | MEMORY 127 | HIGH — bulk-read confirmed |
-| `7F 00 00 00` | unknown single byte | LOW — size 1 returns `0x00`, size > 1 returns nothing |
+| `7F 00 00 00` | unknown single byte, always `0x00` | LOW — size 1 returns `0x00`, size > 1 returns nothing; does **not** track active memory (verified 2026-05-28 across MANUAL / M1 / M2 / M5 / M50 / M127) |
 | Other prefixes | confirmed silent (00, 01, 02, 0F, 1E, 1F, 30 10, 40, 50, 60, 70) | swept on 2026-05-27, no response |
 
 **Memory stride is `00 10 00 00` between consecutive slots, with carry into the high byte.** See `re202_core::address::memory_slot_address`.
@@ -99,7 +99,7 @@ Universal Identity Request (`F0 7E 7F 06 01 F7`) returns:
 | `1A` | Reverb Sw | 0..1 | |
 | `1B` | Tap Sw | 0..1 | |
 | `1C..1F` | **Tap Time** | 0..2000 | **Packed as 4 nibbles, MSB→LSB.** Each byte uses only the low 4 bits. value = `(a<<12)|(b<<8)|(c<<4)|d`. Range max depends on Time Mode (Normal=1000 ms, Long=2000 ms). |
-| `20` | Time Mode | 0..1 | per-memory override of System `06`? Unclear precedence — TEST. |
+| `20` | Time Mode | 0..1 | per-memory override of System `06`; per-memory wins (see "Time Mode precedence" below). |
 
 ## CC map (parameter sniffer)
 
@@ -194,9 +194,21 @@ System Time Mode (`10 00 00 06`) and per-memory Time Mode (memory offset `0x20`)
 
 Practical takeaway for the editor: when showing tap time to the user, validate against the per-memory Time Mode, not the System one.
 
+## Per-memory vs global (manual cross-reference)
+
+Cross-checked against the Roland reference manual at `static.roland.com/manuals/re-202_reference/eng/` on 2026-05-28.
+
+The manual groups Reverb Type, Time Mode, Direct On/Off, Direct Mode, Carryover, Memory Extent, and the MIDI settings under [Various Settings](https://static.roland.com/manuals/re-202_reference/eng/25633203.html). Several of these — Reverb Type and Time Mode included — are reached via a boot-up menu (hold [TAP], power on, MODE SELECTOR to a specific position). That phrasing alone marks them as global system settings, not per-preset.
+
+Of those, **only Time Mode also has a per-memory copy** in the MIDI memory block (offset `0x20`). The reference manual doesn't mention this copy — it's exposed only via SysEx and is what determines the tap-time ceiling for the active memory. Reverb Type, Direct, Carryover, Memory Extent, and MIDI settings have no per-memory copy: they live exclusively in the System area (`10 00 00 00`).
+
+MANUAL-specific note from [Saving and Switching Between Memories](https://static.roland.com/manuals/re-202_reference/eng/25633197.html): "If you've saved to MANUAL, only the [TAPE] button and expression pedal settings are saved." When MANUAL is selected, the audible knob values come from the physical panel pots, not from the stored block. The 33-byte block at `20 10 00 00` is still 33 bytes structurally, but only the TAPE and expression-pedal-range bytes are user-meaningful for MANUAL.
+
 ## What is at `7F 00 00 00`? (still opaque)
 
 Single byte returning `0x00`. RQ1 with size > 1 returns nothing. Writing to it is risky and not yet tested. Treat as off-limits unless someone has a reason.
+
+**Tested as candidate "current memory" register, refuted (2026-05-28).** Drove the device through MANUAL → M1 → M2 → M5 → M50 → M127 → M1 via PC# (PC switching confirmed working by reading the edit-buffer Mode byte at each step — it tracked). The `7F 00 00 00` byte stayed `0x00` in every state. Whatever this address is, it does not encode the active slot. No known direct register for "which memory is selected" exists in the documented address space.
 
 ## Slot persistence across power cycle (confirmed)
 
