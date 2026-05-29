@@ -94,4 +94,4 @@ Findings get promoted into `re202-core` with byte-exact round-trip tests against
 
 ## License
 
-[GPL-3.0-or-later](LICENSE). See [LICENSE](LICENSE) for the full text.
+[MIT](LICENSE). See [LICENSE](LICENSE) for the full text.
