@@ -2,7 +2,9 @@
 
 A SysEx codec, CLI, and WASM bindings for the [BOSS RE-202 Space Echo](https://www.boss.info/global/products/re-202/).
 
-Modeled after [`ml10x-access-rs`](https://github.com/ragb/ml10x-access-rs).
+Built on the shared [`midi-access-kit`](https://github.com/ragb/midi-access-kit)
+foundation: the codec implements one `Device` trait and the CLI is the kit's
+generic engine (same as [`ck-access-rs`](https://github.com/ragb/ck-access-rs)).
 
 ## Crates
 
@@ -14,29 +16,40 @@ Modeled after [`ml10x-access-rs`](https://github.com/ragb/ml10x-access-rs).
 
 ## Status
 
-Codec covers the [full official MIDI Implementation](https://www.zikinf.com/manuels/boss-re-202-space-echo-implementation-midi-en-78875.pdf) plus the undocumented **edit-buffer mirror at `20 00 00 00`** (a writable 33-byte live view of the active memory, discovered by address-sweeping). System + Memory both round-trip byte-exact against device captures. CLI does dump/sync/diff/show/lint/select/identity/schema. WASM bindings render typed in TS. See [`docs/sysex-notes.md`](docs/sysex-notes.md) for the running discovery log.
+Codec covers the [full official MIDI Implementation](https://www.zikinf.com/manuels/boss-re-202-space-echo-implementation-midi-en-78875.pdf) plus the undocumented **edit-buffer mirror at `20 00 00 00`** (a writable 33-byte live view of the active memory, discovered by address-sweeping). System + Memory both round-trip byte-exact against device captures. The CLI is the `midi-access-kit` engine: ports/identity/dump/sync/show/lint/diff/schema/catalog/resolve. WASM bindings render typed in TS. See [`docs/sysex-notes.md`](docs/sysex-notes.md) for the running discovery log.
 
 ## CLI
+
+The CLI addresses one document per **area** token. The RE-202 has a global
+`system` area plus 33-byte memory blocks: `memory` (MEMORY MANUAL), `memory-1` …
+`memory-127` (the stored user slots), and `edit` (the live edit-buffer mirror).
 
 ```text
 re202 ports                                  # list MIDI ports
 re202 identity                               # send Universal Identity Request; print device info
 
-re202 dump --system   -o system.yaml         # read 18-byte System area
-re202 dump --memory N -o memory_N.yaml       # read a slot (manual / 1..=127)
-re202 dump --edit     -o edit.yaml           # read the edit-buffer mirror
-re202 dump --all      -o ./dumps/            # everything into a directory
+re202 dump system     -o system.yaml         # read the 18-byte System area
+re202 dump memory-7   -o memory_007.yaml     # read user slot 7 (memory / memory-1..127 / edit)
+re202 dump edit       -o edit.yaml           # read the edit-buffer mirror
 
-re202 sync --system   -i system.yaml         # write back; --memory / --edit / --all available
-re202 sync --memory 7 -i memory_007.yaml --verify    # write + read-back + compare
-re202 select 7                               # advance to MEMORY 7 via Program Change
-re202 show  memory_N.yaml                    # pretty-print a YAML
-re202 lint  memory_N.yaml                    # validate against the typed model
-re202 diff  a.yaml b.yaml                    # field-level diff between two YAML files
-re202 schema system                          # print the JSON Schema for SystemArea
+re202 sync system     -i system.yaml         # write a YAML back to the device
+re202 sync memory-7   -i memory_007.yaml --verify   # write + read-back + compare
+re202 show   memory_007.yaml                 # pretty-print a YAML, identifying its kind
+re202 lint   memory_007.yaml                 # validate against the typed model
+re202 diff   a.yaml b.yaml                   # field-level diff between two YAML files
+re202 schema system                          # print the JSON Schema (system / memory)
+re202 catalog                                # print the metadata bundle as JSON
+re202 resolve preset.yaml                    # normalize value names to numbers
 ```
 
-Global flags: `--port "<substring>"` selects the MIDI port (both directions). `--input-port` / `--output-port` override one direction. `--device-id 0xNN` overrides the default `0x10`.
+Global flags: `--port "<substring>"` selects the MIDI port (both directions);
+`--input-port` / `--output-port` override one direction; `--device N` sets the
+channel `0..=15` (Roland device id `0x10 + N`, so the default `0` is id `0x10`).
+
+**Dropped in the move to the generic engine** (the kit's subcommand set is
+fixed): the old `dump --all` bulk loop over every slot, and `select` (a
+Program-Change slot switch). Per-slot dump/sync is preserved via the `memory-N`
+areas; the wasm/editor layer retains full per-slot addressing.
 
 ## Development
 
