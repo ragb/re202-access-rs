@@ -431,6 +431,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8"
 
 [[package]]
+name = "midi-access-cli"
+version = "0.1.0"
+source = "git+https://github.com/ragb/midi-access-kit?tag=v0.1.0#d9fb139d7e3900052f1f688828451e3052b64b19"
+dependencies = [
+ "anyhow",
+ "clap",
+ "env_logger",
+ "log",
+ "midi-access-core",
+ "midir",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
+]
+
+[[package]]
+name = "midi-access-core"
+version = "0.1.0"
+source = "git+https://github.com/ragb/midi-access-kit?tag=v0.1.0#d9fb139d7e3900052f1f688828451e3052b64b19"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
+]
+
+[[package]]
 name = "midir"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -572,22 +601,15 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 name = "re202"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "clap",
- "env_logger",
- "log",
- "midir",
+ "midi-access-cli",
  "re202-core",
- "schemars",
- "serde_json",
- "serde_yaml",
- "thiserror",
 ]
 
 [[package]]
 name = "re202-core"
 version = "0.1.0"
 dependencies = [
+ "midi-access-core",
  "schemars",
  "serde",
  "serde_yaml",

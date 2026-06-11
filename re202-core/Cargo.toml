@@ -9,11 +9,15 @@ description = "BOSS RE-202 Space Echo SysEx codec (pure, no I/O)."
 [features]
 default = []
 # Enabled by the wasm crate. Adds Tsify derives so types render as TS.
+# (No `midi-access-core/tsify`: this crate's wasm surface uses only its own
+# typed models, none of the kit's tsify types — pulling it in would leak unused
+# kit interfaces like `RawByte` into the generated `.d.ts`.)
 tsify = ["dep:tsify-next", "dep:wasm-bindgen"]
 # Enabled by the CLI when emitting JSON Schema. Adds schemars derives.
-schema = ["dep:schemars"]
+schema = ["dep:schemars", "midi-access-core/schema"]
 
 [dependencies]
+midi-access-core = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
