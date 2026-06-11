@@ -16,38 +16,75 @@
   ],
   "properties": {
     "carryover": {
+      "description": "Carry the echo/reverb tail over when switching memories (offset 0x05).",
       "type": "boolean"
     },
     "ctl1_function": {
-      "$ref": "#/definitions/Ctl1Function"
+      "description": "Function assigned to the CTL1 footswitch / external pedal (offset 0x01).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Ctl1Function"
+        }
+      ]
     },
     "ctl2_function": {
-      "$ref": "#/definitions/Ctl2Function"
+      "description": "Function assigned to the CTL2 footswitch / external pedal (offset 0x02).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Ctl2Function"
+        }
+      ]
     },
     "direct": {
-      "$ref": "#/definitions/DirectSettings"
+      "description": "Direct (dry) signal routing and voicing (offsets 0x03..=0x04).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DirectSettings"
+        }
+      ]
     },
     "input_source": {
-      "$ref": "#/definitions/InputSource"
+      "description": "Audio input source (offset 0x00): instrument (Guitar) or Line level.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/InputSource"
+        }
+      ]
     },
     "memory_extent": {
-      "description": "1..=4 — number of memory slots cycled by the MEMORY footswitch.",
+      "description": "Number of memory slots (1..=4) cycled by the MEMORY footswitch (offset 0x08).",
       "type": "integer",
       "format": "uint8",
       "minimum": 0.0
     },
     "midi": {
-      "$ref": "#/definitions/MidiSettings"
+      "description": "MIDI configuration: channels, message filters, sync (offsets 0x09..=0x11).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/MidiSettings"
+        }
+      ]
     },
     "reverb_type": {
-      "$ref": "#/definitions/ReverbType"
+      "description": "Reverb algorithm (offset 0x07).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ReverbType"
+        }
+      ]
     },
     "time_mode": {
-      "$ref": "#/definitions/TimeMode"
+      "description": "Global delay-time range (offset 0x06): Normal (≤1000 ms) or Long (≤2000 ms). Each memory also stores its own Time Mode (offset 0x20), which takes precedence for the active patch's tap-time ceiling.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/TimeMode"
+        }
+      ]
     }
   },
   "definitions": {
     "Ctl1Function": {
+      "description": "Function the CTL1 footswitch / external pedal performs.",
       "type": "string",
       "enum": [
         "memory_up",
@@ -58,6 +95,7 @@
       ]
     },
     "Ctl2Function": {
+      "description": "Function the CTL2 footswitch / external pedal performs.",
       "type": "string",
       "enum": [
         "memory_up",
@@ -68,6 +106,7 @@
       ]
     },
     "DirectMode": {
+      "description": "Voicing of the direct (dry) signal.",
       "type": "string",
       "enum": [
         "analog",
@@ -82,14 +121,21 @@
       ],
       "properties": {
         "mode": {
-          "$ref": "#/definitions/DirectMode"
+          "description": "Direct-signal voicing (offset 0x04): clean Analog, or RE-201 Simulate.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DirectMode"
+            }
+          ]
         },
         "on": {
+          "description": "Whether the direct (dry) signal passes through alongside the effect (offset 0x03).",
           "type": "boolean"
         }
       }
     },
     "InputSource": {
+      "description": "Audio input source — instrument (Guitar) or Line level.",
       "type": "string",
       "enum": [
         "guitar",
@@ -130,35 +176,61 @@
       ],
       "properties": {
         "cc_in": {
+          "description": "Receive Control Change to set parameters (offset 0x0D).",
           "type": "boolean"
         },
         "cc_out": {
+          "description": "Send Control Change when a knob is moved (offset 0x0E).",
           "type": "boolean"
         },
         "pc_in": {
+          "description": "Receive Program Change to switch memories (offset 0x0B).",
           "type": "boolean"
         },
         "pc_out": {
+          "description": "Send Program Change when the active memory changes (offset 0x0C).",
           "type": "boolean"
         },
         "realtime_source": {
-          "$ref": "#/definitions/RealtimeSource"
+          "description": "Realtime-message (start/stop/clock) source (offset 0x10): Internal or MIDI.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RealtimeSource"
+            }
+          ]
         },
         "rx_channel": {
-          "$ref": "#/definitions/MidiChannel"
+          "description": "Channel the device receives on (offset 0x09).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/MidiChannel"
+            }
+          ]
         },
         "sync_source": {
-          "$ref": "#/definitions/SyncSource"
+          "description": "Tempo sync source (offset 0x0F): Internal, or Auto (follow incoming clock).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/SyncSource"
+            }
+          ]
         },
         "thru": {
+          "description": "Echo incoming MIDI back out the MIDI OUT / THRU port (offset 0x11).",
           "type": "boolean"
         },
         "tx_channel": {
-          "$ref": "#/definitions/TxChannel"
+          "description": "Channel the device transmits on (offset 0x0A).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TxChannel"
+            }
+          ]
         }
       }
     },
     "RealtimeSource": {
+      "description": "Source of MIDI realtime messages (start / stop / clock).",
       "type": "string",
       "enum": [
         "internal",
@@ -166,6 +238,7 @@
       ]
     },
     "ReverbType": {
+      "description": "Reverb algorithm.",
       "type": "string",
       "enum": [
         "spring",
@@ -176,6 +249,7 @@
       ]
     },
     "SyncSource": {
+      "description": "Tempo sync source.",
       "type": "string",
       "enum": [
         "internal",
@@ -183,6 +257,7 @@
       ]
     },
     "TimeMode": {
+      "description": "Delay-time range: Normal (≤1000 ms) or Long (≤2000 ms).",
       "type": "string",
       "enum": [
         "normal",

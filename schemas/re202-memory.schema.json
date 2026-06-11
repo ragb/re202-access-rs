@@ -21,30 +21,67 @@
   ],
   "properties": {
     "bass": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Bass tone of the echo (offset 0x0B; min/max at 0x0C..=0x0D).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "echo_volume": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Echo Volume — wet (delayed) signal level (offset 0x08; min/max at 0x09..=0x0A).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "intensity": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Intensity — feedback / number of repeats (offset 0x05; min/max at 0x06..=0x07).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "mode": {
-      "$ref": "#/definitions/Mode"
+      "description": "Head-combination mode 1..12 (offset 0x01) — which playback heads are active.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Mode"
+        }
+      ]
     },
     "repeat_rate": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Repeat Rate — delay time (offset 0x02; expression-pedal min/max at 0x03..=0x04).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "reverb_sw": {
+      "description": "Reverb on/off (offset 0x1A).",
       "type": "boolean"
     },
     "reverb_volume": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Reverb Volume (offset 0x11; min/max at 0x12..=0x13).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "saturation": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Saturation — tape overdrive amount (offset 0x14; min/max at 0x15..=0x16).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "tap_sw": {
+      "description": "Tap on/off (offset 0x1B).",
       "type": "boolean"
     },
     "tap_time_ms": {
@@ -54,16 +91,36 @@
       "minimum": 0.0
     },
     "tape": {
-      "$ref": "#/definitions/Tape"
+      "description": "Tape age / character (offset 0x00): New or Aged.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Tape"
+        }
+      ]
     },
     "time_mode": {
-      "$ref": "#/definitions/TimeMode"
+      "description": "Per-memory delay-time range (offset 0x20). Overrides the System Time Mode for this patch; per-memory wins for the tap-time ceiling.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/TimeMode"
+        }
+      ]
     },
     "treble": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Treble tone of the echo (offset 0x0E; min/max at 0x0F..=0x10).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "wow_flutter": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Wow & Flutter — tape pitch instability (offset 0x17; min/max at 0x18..=0x19).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     }
   },
   "definitions": {
@@ -166,16 +223,19 @@
       ],
       "properties": {
         "max": {
+          "description": "Expression-pedal upper bound, 0..=127.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "min": {
+          "description": "Expression-pedal lower bound, 0..=127.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "value": {
+          "description": "Current value, 0..=127.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
@@ -183,6 +243,7 @@
       }
     },
     "Tape": {
+      "description": "Tape age / character — New (bright) or Aged (worn, darker).",
       "type": "string",
       "enum": [
         "new",
@@ -190,6 +251,7 @@
       ]
     },
     "TimeMode": {
+      "description": "Delay-time range: Normal (≤1000 ms) or Long (≤2000 ms).",
       "type": "string",
       "enum": [
         "normal",

@@ -20,22 +20,36 @@ use crate::system::TimeMode;
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Memory {
+    /// Tape age / character (offset 0x00): New or Aged.
     pub tape: Tape,
+    /// Head-combination mode 1..12 (offset 0x01) — which playback heads are active.
     pub mode: Mode,
+    /// Repeat Rate — delay time (offset 0x02; expression-pedal min/max at 0x03..=0x04).
     pub repeat_rate: RangedParam,
+    /// Intensity — feedback / number of repeats (offset 0x05; min/max at 0x06..=0x07).
     pub intensity: RangedParam,
+    /// Echo Volume — wet (delayed) signal level (offset 0x08; min/max at 0x09..=0x0A).
     pub echo_volume: RangedParam,
+    /// Bass tone of the echo (offset 0x0B; min/max at 0x0C..=0x0D).
     pub bass: RangedParam,
+    /// Treble tone of the echo (offset 0x0E; min/max at 0x0F..=0x10).
     pub treble: RangedParam,
+    /// Reverb Volume (offset 0x11; min/max at 0x12..=0x13).
     pub reverb_volume: RangedParam,
+    /// Saturation — tape overdrive amount (offset 0x14; min/max at 0x15..=0x16).
     pub saturation: RangedParam,
+    /// Wow & Flutter — tape pitch instability (offset 0x17; min/max at 0x18..=0x19).
     pub wow_flutter: RangedParam,
+    /// Reverb on/off (offset 0x1A).
     pub reverb_sw: bool,
+    /// Tap on/off (offset 0x1B).
     pub tap_sw: bool,
     /// 0..=2000 ms. Wire format packs this as four 4-bit nibbles, MSB→LSB,
     /// at offsets 0x1C..0x1F. Effective ceiling depends on Time Mode
     /// (Normal=1000 ms, Long=2000 ms) — not enforced here.
     pub tap_time_ms: u16,
+    /// Per-memory delay-time range (offset 0x20). Overrides the System Time Mode
+    /// for this patch; per-memory wins for the tap-time ceiling.
     pub time_mode: TimeMode,
 }
 
@@ -45,8 +59,11 @@ pub struct Memory {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RangedParam {
+    /// Current value, 0..=127.
     pub value: u8,
+    /// Expression-pedal lower bound, 0..=127.
     pub min: u8,
+    /// Expression-pedal upper bound, 0..=127.
     pub max: u8,
 }
 
@@ -80,6 +97,7 @@ impl RangedParam {
     }
 }
 
+/// Tape age / character — New (bright) or Aged (worn, darker).
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
