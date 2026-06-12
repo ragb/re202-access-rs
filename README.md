@@ -20,22 +20,22 @@ Codec covers the [full official MIDI Implementation](https://www.zikinf.com/manu
 
 ## CLI
 
-The CLI addresses one document per **area** token. The RE-202 has a global
-`system` area plus 33-byte memory blocks: `memory` (MEMORY MANUAL), `memory-1` …
-`memory-127` (the stored user slots), and `edit` (the live edit-buffer mirror).
+The CLI addresses one document per **area** token, mirroring ck's surface:
+`system` (global settings), `memory` (MEMORY MANUAL), and `edit` (the live
+edit-buffer mirror of whichever memory is currently active).
 
 ```text
 re202 ports                                  # list MIDI ports
 re202 identity                               # send Universal Identity Request; print device info
 
-re202 dump system     -o system.yaml         # read the 18-byte System area
-re202 dump memory-7   -o memory_007.yaml     # read user slot 7 (memory / memory-1..127 / edit)
-re202 dump edit       -o edit.yaml           # read the edit-buffer mirror
+re202 dump system   -o system.yaml           # read the 18-byte System area
+re202 dump memory   -o manual.yaml           # read MEMORY MANUAL
+re202 dump edit     -o active.yaml           # read the active memory (edit-buffer mirror)
 
-re202 sync system     -i system.yaml         # write a YAML back to the device
-re202 sync memory-7   -i memory_007.yaml --verify   # write + read-back + compare
-re202 show   memory_007.yaml                 # pretty-print a YAML, identifying its kind
-re202 lint   memory_007.yaml                 # validate against the typed model
+re202 sync system   -i system.yaml           # write a YAML back to the device
+re202 sync edit     -i active.yaml --verify  # write + read-back + compare
+re202 show   active.yaml                     # pretty-print a YAML, identifying its kind
+re202 lint   active.yaml                     # validate against the typed model
 re202 diff   a.yaml b.yaml                   # field-level diff between two YAML files
 re202 schema system                          # print the JSON Schema (system / memory)
 re202 catalog                                # print the metadata bundle as JSON
@@ -46,10 +46,12 @@ Global flags: `--port "<substring>"` selects the MIDI port (both directions);
 `--input-port` / `--output-port` override one direction; `--device N` sets the
 channel `0..=15` (Roland device id `0x10 + N`, so the default `0` is id `0x10`).
 
-**Dropped in the move to the generic engine** (the kit's subcommand set is
-fixed): the old `dump --all` bulk loop over every slot, and `select` (a
-Program-Change slot switch). Per-slot dump/sync is preserved via the `memory-N`
-areas; the wasm/editor layer retains full per-slot addressing.
+**Per-slot access lives in the wasm/editor layer.** The kit's engine matches an
+area token against a fixed list with no parametric per-slot form, so the CLI
+covers System, MANUAL, and the currently-active memory (`edit`) rather than
+enumerating 127 near-identical `memory-N` areas. The wasm bindings keep full
+per-slot addressing (`memorySlotBase(n)` etc.). The old `dump --all` bulk loop
+and `select` (Program-Change slot switch) have no generic-engine equivalent.
 
 ## Development
 

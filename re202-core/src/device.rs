@@ -5,22 +5,24 @@
 //!
 //! ## Areas
 //!
-//! The engine addresses one editable document per *area* token. The RE-202 has a
-//! global System block plus 128 interchangeable 33-byte memory blocks (MANUAL +
-//! 127 user slots) and a live edit-buffer mirror, so the areas are:
+//! The engine addresses one editable document per *area* token, matched against a
+//! fixed list. The RE-202's areas mirror ck's clean surface:
 //!
 //! - `system` — the global System area (18 bytes, `10 00 00 00`).
-//! - `memory` — MEMORY MANUAL, the live manual-mode patch (`20 10 00 00`).
-//! - `memory-1` … `memory-127` — the 127 stored user slots.
-//! - `edit` — the edit-buffer mirror of the currently-active memory (`20 00 00 00`).
+//! - `memory` — MEMORY MANUAL, the manual-mode patch (`20 10 00 00`).
+//! - `edit`   — the edit-buffer mirror of the currently-active memory
+//!   (`20 00 00 00`); reads/writes whatever slot is selected on the device.
 //!
-//! `memory`, `edit`, and every `memory-N` share the one `Memory` codec and the
-//! one `re202-memory` JSON Schema; only their target address differs. This keeps
-//! per-slot `dump`/`sync` available through the engine's fixed subcommand set
-//! (areas are just tokens). Two pre-migration conveniences have **no** equivalent
-//! in the generic engine and are dropped as device-specific gaps: `--all` (bulk
-//! dump/sync of every slot in one command) and `select` (a Program-Change slot
-//! switch). The wasm/editor layer keeps full per-slot addressing.
+//! `memory` and `edit` share the one `Memory` codec and the `re202-memory` JSON
+//! Schema; only their target address differs.
+//!
+//! The engine matches an area token by exact (normalized) equality — it has no
+//! parametric per-slot token — so reaching all 127 user slots from the CLI would
+//! mean 127 near-identical `memory-N` areas. Rather than bloat the surface,
+//! per-slot dump/sync (and the old `--all` bulk loop and `select` Program-Change)
+//! live in the wasm/editor layer, which keeps full per-slot addressing
+//! (`memorySlotBase(n)` etc.). The CLI covers the global System, MANUAL, and
+//! whichever memory is currently active (via `edit`).
 //!
 //! ## Wire framing
 //!
@@ -29,15 +31,11 @@
 //! `request`/`encode` return the SysEx frame(s) for an operation; `decode` splits
 //! a collected dump stream and reads the first matching data-set block.
 
-use std::sync::OnceLock;
-
 use serde_yaml::Value;
 
 use midi_access_core::{Area, Catalogs, Device, DeviceError, Inbound, Params};
 
-use crate::address::{
-    AddressSpace, MemorySlot, EDIT_BUFFER_BASE, MEMORY_BLOCK_LEN, MEMORY_SLOT_MAX, SYSTEM_BASE,
-};
+use crate::address::{AddressSpace, MemorySlot, EDIT_BUFFER_BASE, MEMORY_BLOCK_LEN, SYSTEM_BASE};
 use crate::sysex::{Frame, CMD_DT1};
 use crate::system::SYSTEM_AREA_LEN;
 use crate::{classify_inbound as core_classify_inbound, InboundMessage, Memory, SystemArea};
@@ -54,37 +52,25 @@ enum Target {
     Memory([u8; 4]),
 }
 
-/// Build the area table once: `system`, `memory` (= MANUAL), `edit`, and one
-/// entry per user slot `memory-1` … `memory-127`. The per-slot names are leaked
-/// to `'static` (a single one-time allocation for a process-lifetime table).
-fn build_areas() -> Vec<Area> {
-    let mut v = vec![
-        Area {
-            name: "system",
-            label: "System area",
-            about: "Global settings (input, controls, MIDI, reverb type) — 18 bytes",
-        },
-        Area {
-            name: "memory",
-            label: "Memory block",
-            about: "MEMORY MANUAL — the live manual-mode patch (33 bytes)",
-        },
-        Area {
-            name: "edit",
-            label: "Memory block",
-            about: "Edit-buffer mirror of the currently-active memory (33 bytes)",
-        },
-    ];
-    for n in 1..=MEMORY_SLOT_MAX {
-        let name: &'static str = Box::leak(format!("memory-{n}").into_boxed_str());
-        v.push(Area {
-            name,
-            label: "Memory block",
-            about: "One stored user memory slot (33 bytes)",
-        });
-    }
-    v
-}
+/// The editable documents, mirroring ck's clean surface (see the module docs for
+/// why per-slot user memories aren't separate CLI areas).
+const AREAS: &[Area] = &[
+    Area {
+        name: "system",
+        label: "System area",
+        about: "Global settings (input, controls, MIDI, reverb type) — 18 bytes",
+    },
+    Area {
+        name: "memory",
+        label: "Memory block",
+        about: "MEMORY MANUAL — the manual-mode patch (33 bytes)",
+    },
+    Area {
+        name: "edit",
+        label: "Memory block",
+        about: "Edit-buffer mirror of the currently-active memory (33 bytes)",
+    },
+];
 
 /// Resolve a (canonical) area name to its wire target. The engine resolves CLI
 /// tokens to canonical names via [`Area::matches`] before calling the device, so
@@ -94,33 +80,21 @@ fn target_for(area: &str) -> Option<Target> {
         "system" => Some(Target::System),
         "memory" => Some(Target::Memory(MemorySlot::Manual.base_address())),
         "edit" => Some(Target::Memory(EDIT_BUFFER_BASE)),
-        other => {
-            let n: u8 = other.strip_prefix("memory-")?.parse().ok()?;
-            match MemorySlot::from_index(n)? {
-                slot @ MemorySlot::User(_) => Some(Target::Memory(slot.base_address())),
-                MemorySlot::Manual => None, // `memory-0` is not a thing
-            }
-        }
+        _ => None,
     }
 }
 
 /// Best-effort reverse map: which area an inbound dump's address belongs to
-/// (informational, for [`Inbound::Dump`]).
+/// (informational, for [`Inbound::Dump`]). User slots have no dedicated CLI
+/// area, so they map to `None`.
 fn area_for_address(address: [u8; 4]) -> Option<String> {
     match AddressSpace::classify(address) {
         AddressSpace::System => Some("system".to_string()),
-        AddressSpace::Memory => {
-            if address == EDIT_BUFFER_BASE {
-                Some("edit".to_string())
-            } else if address == MemorySlot::Manual.base_address() {
-                Some("memory".to_string())
-            } else {
-                (1..=MEMORY_SLOT_MAX)
-                    .find(|&n| MemorySlot::User(n).base_address() == address)
-                    .map(|n| format!("memory-{n}"))
-            }
+        AddressSpace::Memory if address == EDIT_BUFFER_BASE => Some("edit".to_string()),
+        AddressSpace::Memory if address == MemorySlot::Manual.base_address() => {
+            Some("memory".to_string())
         }
-        AddressSpace::Unknown => None,
+        AddressSpace::Memory | AddressSpace::Unknown => None,
     }
 }
 
@@ -170,8 +144,7 @@ impl Device for Re202 {
     const NAME: &'static str = "re202";
 
     fn areas() -> &'static [Area] {
-        static AREAS: OnceLock<Vec<Area>> = OnceLock::new();
-        AREAS.get_or_init(build_areas).as_slice()
+        AREAS
     }
 
     fn params() -> Params {
@@ -319,15 +292,10 @@ mod tests {
     }
 
     #[test]
-    fn areas_cover_system_memory_edit_and_127_slots() {
+    fn areas_are_the_ck_parity_three() {
         let areas = Re202::areas();
-        // system + memory + edit + memory-1..=127
-        assert_eq!(areas.len(), 3 + 127);
-        assert!(areas.iter().any(|a| a.name == "system"));
-        assert!(areas.iter().any(|a| a.name == "memory"));
-        assert!(areas.iter().any(|a| a.name == "edit"));
-        assert!(areas.iter().any(|a| a.name == "memory-1"));
-        assert!(areas.iter().any(|a| a.name == "memory-127"));
+        let names: Vec<&str> = areas.iter().map(|a| a.name).collect();
+        assert_eq!(names, ["system", "memory", "edit"]);
         // Labels drive `show`/`lint` wording.
         assert_eq!(
             areas.iter().find(|a| a.name == "system").unwrap().label,
@@ -350,16 +318,9 @@ mod tests {
             target_for("edit"),
             Some(Target::Memory(a)) if a == EDIT_BUFFER_BASE
         ));
-        assert!(matches!(
-            target_for("memory-1"),
-            Some(Target::Memory(a)) if a == [0x20, 0x20, 0x00, 0x00]
-        ));
-        assert!(matches!(
-            target_for("memory-127"),
-            Some(Target::Memory(a)) if a == [0x30, 0x00, 0x00, 0x00]
-        ));
-        assert!(target_for("memory-0").is_none());
-        assert!(target_for("memory-128").is_none());
+        // User slots are not CLI areas (the wasm layer addresses them instead).
+        assert!(target_for("memory-1").is_none());
+        assert!(target_for("memory-127").is_none());
         assert!(target_for("bogus").is_none());
     }
 
@@ -374,7 +335,7 @@ mod tests {
     #[test]
     fn memory_round_trips_through_value_for_every_target_kind() {
         let doc = memory_doc();
-        for area in ["memory", "edit", "memory-42", "memory-127"] {
+        for area in ["memory", "edit"] {
             let bytes = Re202::encode(area, &doc, 0).unwrap();
             let back = Re202::decode(area, &bytes).unwrap();
             assert_eq!(back, doc, "round trip for area {area}");
@@ -402,7 +363,7 @@ mod tests {
         assert!(Re202::accepts("system", &system_doc()));
         assert!(!Re202::accepts("system", &memory_doc()));
         assert!(Re202::accepts("memory", &memory_doc()));
-        assert!(Re202::accepts("memory-9", &memory_doc()));
+        assert!(Re202::accepts("edit", &memory_doc()));
         assert!(!Re202::accepts("memory", &system_doc()));
         assert!(!Re202::accepts("bogus", &memory_doc()));
     }
