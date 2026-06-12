@@ -19,25 +19,25 @@ pub const SYSTEM_AREA_LEN: usize = 18;
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemArea {
-    /// Audio input source (offset 0x00): instrument (Guitar) or Line level.
+    /// Audio input source: instrument (Guitar) or Line level.
     pub input_source: InputSource,
-    /// Function assigned to the CTL1 footswitch / external pedal (offset 0x01).
+    /// Function assigned to the CTL1 footswitch / external pedal.
     pub ctl1_function: Ctl1Function,
-    /// Function assigned to the CTL2 footswitch / external pedal (offset 0x02).
+    /// Function assigned to the CTL2 footswitch / external pedal.
     pub ctl2_function: Ctl2Function,
-    /// Direct (dry) signal routing and voicing (offsets 0x03..=0x04).
+    /// Direct (dry) signal routing and voicing.
     pub direct: DirectSettings,
-    /// Carry the echo/reverb tail over when switching memories (offset 0x05).
+    /// Carry the echo/reverb tail over when switching memories.
     pub carryover: bool,
-    /// Global delay-time range (offset 0x06): Normal (≤1000 ms) or Long
-    /// (≤2000 ms). Each memory also stores its own Time Mode (offset 0x20),
-    /// which takes precedence for the active patch's tap-time ceiling.
+    /// Global delay-time range: Normal (≤1000 ms) or Long (≤2000 ms). Each
+    /// memory also stores its own Time Mode, which takes precedence for the
+    /// active patch's tap-time ceiling.
     pub time_mode: TimeMode,
-    /// Reverb algorithm (offset 0x07).
+    /// Reverb algorithm.
     pub reverb_type: ReverbType,
-    /// Number of memory slots (1..=4) cycled by the MEMORY footswitch (offset 0x08).
+    /// Number of memory slots (1..=4) cycled by the MEMORY footswitch.
     pub memory_extent: u8,
-    /// MIDI configuration: channels, message filters, sync (offsets 0x09..=0x11).
+    /// MIDI configuration: channels, message filters, and sync.
     pub midi: MidiSettings,
 }
 
@@ -46,9 +46,9 @@ pub struct SystemArea {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectSettings {
-    /// Whether the direct (dry) signal passes through alongside the effect (offset 0x03).
+    /// Whether the direct (dry) signal passes through alongside the effect.
     pub on: bool,
-    /// Direct-signal voicing (offset 0x04): clean Analog, or RE-201 Simulate.
+    /// Direct-signal voicing: clean Analog, or RE-201 Simulate.
     pub mode: DirectMode,
 }
 
@@ -57,23 +57,23 @@ pub struct DirectSettings {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MidiSettings {
-    /// Channel the device receives on (offset 0x09).
+    /// Channel the device receives on.
     pub rx_channel: MidiChannel,
-    /// Channel the device transmits on (offset 0x0A).
+    /// Channel the device transmits on.
     pub tx_channel: TxChannel,
-    /// Receive Program Change to switch memories (offset 0x0B).
+    /// Receive Program Change to switch memories.
     pub pc_in: bool,
-    /// Send Program Change when the active memory changes (offset 0x0C).
+    /// Send Program Change when the active memory changes.
     pub pc_out: bool,
-    /// Receive Control Change to set parameters (offset 0x0D).
+    /// Receive Control Change to set parameters.
     pub cc_in: bool,
-    /// Send Control Change when a knob is moved (offset 0x0E).
+    /// Send Control Change when a knob is moved.
     pub cc_out: bool,
-    /// Tempo sync source (offset 0x0F): Internal, or Auto (follow incoming clock).
+    /// Tempo sync source: Internal, or Auto (follow incoming clock).
     pub sync_source: SyncSource,
-    /// Realtime-message (start/stop/clock) source (offset 0x10): Internal or MIDI.
+    /// Source of MIDI realtime messages (start/stop/clock): Internal or MIDI.
     pub realtime_source: RealtimeSource,
-    /// Echo incoming MIDI back out the MIDI OUT / THRU port (offset 0x11).
+    /// Echo incoming MIDI back out the MIDI OUT / THRU port.
     pub thru: bool,
 }
 

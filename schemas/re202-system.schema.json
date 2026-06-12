@@ -16,11 +16,11 @@
   ],
   "properties": {
     "carryover": {
-      "description": "Carry the echo/reverb tail over when switching memories (offset 0x05).",
+      "description": "Carry the echo/reverb tail over when switching memories.",
       "type": "boolean"
     },
     "ctl1_function": {
-      "description": "Function assigned to the CTL1 footswitch / external pedal (offset 0x01).",
+      "description": "Function assigned to the CTL1 footswitch / external pedal.",
       "allOf": [
         {
           "$ref": "#/definitions/Ctl1Function"
@@ -28,7 +28,7 @@
       ]
     },
     "ctl2_function": {
-      "description": "Function assigned to the CTL2 footswitch / external pedal (offset 0x02).",
+      "description": "Function assigned to the CTL2 footswitch / external pedal.",
       "allOf": [
         {
           "$ref": "#/definitions/Ctl2Function"
@@ -36,7 +36,7 @@
       ]
     },
     "direct": {
-      "description": "Direct (dry) signal routing and voicing (offsets 0x03..=0x04).",
+      "description": "Direct (dry) signal routing and voicing.",
       "allOf": [
         {
           "$ref": "#/definitions/DirectSettings"
@@ -44,7 +44,7 @@
       ]
     },
     "input_source": {
-      "description": "Audio input source (offset 0x00): instrument (Guitar) or Line level.",
+      "description": "Audio input source: instrument (Guitar) or Line level.",
       "allOf": [
         {
           "$ref": "#/definitions/InputSource"
@@ -52,13 +52,13 @@
       ]
     },
     "memory_extent": {
-      "description": "Number of memory slots (1..=4) cycled by the MEMORY footswitch (offset 0x08).",
+      "description": "Number of memory slots (1..=4) cycled by the MEMORY footswitch.",
       "type": "integer",
       "format": "uint8",
       "minimum": 0.0
     },
     "midi": {
-      "description": "MIDI configuration: channels, message filters, sync (offsets 0x09..=0x11).",
+      "description": "MIDI configuration: channels, message filters, and sync.",
       "allOf": [
         {
           "$ref": "#/definitions/MidiSettings"
@@ -66,7 +66,7 @@
       ]
     },
     "reverb_type": {
-      "description": "Reverb algorithm (offset 0x07).",
+      "description": "Reverb algorithm.",
       "allOf": [
         {
           "$ref": "#/definitions/ReverbType"
@@ -74,7 +74,7 @@
       ]
     },
     "time_mode": {
-      "description": "Global delay-time range (offset 0x06): Normal (≤1000 ms) or Long (≤2000 ms). Each memory also stores its own Time Mode (offset 0x20), which takes precedence for the active patch's tap-time ceiling.",
+      "description": "Global delay-time range: Normal (≤1000 ms) or Long (≤2000 ms). Each memory also stores its own Time Mode, which takes precedence for the active patch's tap-time ceiling.",
       "allOf": [
         {
           "$ref": "#/definitions/TimeMode"
@@ -121,7 +121,7 @@
       ],
       "properties": {
         "mode": {
-          "description": "Direct-signal voicing (offset 0x04): clean Analog, or RE-201 Simulate.",
+          "description": "Direct-signal voicing: clean Analog, or RE-201 Simulate.",
           "allOf": [
             {
               "$ref": "#/definitions/DirectMode"
@@ -129,7 +129,7 @@
           ]
         },
         "on": {
-          "description": "Whether the direct (dry) signal passes through alongside the effect (offset 0x03).",
+          "description": "Whether the direct (dry) signal passes through alongside the effect.",
           "type": "boolean"
         }
       }
@@ -176,23 +176,23 @@
       ],
       "properties": {
         "cc_in": {
-          "description": "Receive Control Change to set parameters (offset 0x0D).",
+          "description": "Receive Control Change to set parameters.",
           "type": "boolean"
         },
         "cc_out": {
-          "description": "Send Control Change when a knob is moved (offset 0x0E).",
+          "description": "Send Control Change when a knob is moved.",
           "type": "boolean"
         },
         "pc_in": {
-          "description": "Receive Program Change to switch memories (offset 0x0B).",
+          "description": "Receive Program Change to switch memories.",
           "type": "boolean"
         },
         "pc_out": {
-          "description": "Send Program Change when the active memory changes (offset 0x0C).",
+          "description": "Send Program Change when the active memory changes.",
           "type": "boolean"
         },
         "realtime_source": {
-          "description": "Realtime-message (start/stop/clock) source (offset 0x10): Internal or MIDI.",
+          "description": "Source of MIDI realtime messages (start/stop/clock): Internal or MIDI.",
           "allOf": [
             {
               "$ref": "#/definitions/RealtimeSource"
@@ -200,7 +200,7 @@
           ]
         },
         "rx_channel": {
-          "description": "Channel the device receives on (offset 0x09).",
+          "description": "Channel the device receives on.",
           "allOf": [
             {
               "$ref": "#/definitions/MidiChannel"
@@ -208,7 +208,7 @@
           ]
         },
         "sync_source": {
-          "description": "Tempo sync source (offset 0x0F): Internal, or Auto (follow incoming clock).",
+          "description": "Tempo sync source: Internal, or Auto (follow incoming clock).",
           "allOf": [
             {
               "$ref": "#/definitions/SyncSource"
@@ -216,11 +216,11 @@
           ]
         },
         "thru": {
-          "description": "Echo incoming MIDI back out the MIDI OUT / THRU port (offset 0x11).",
+          "description": "Echo incoming MIDI back out the MIDI OUT / THRU port.",
           "type": "boolean"
         },
         "tx_channel": {
-          "description": "Channel the device transmits on (offset 0x0A).",
+          "description": "Channel the device transmits on.",
           "allOf": [
             {
               "$ref": "#/definitions/TxChannel"

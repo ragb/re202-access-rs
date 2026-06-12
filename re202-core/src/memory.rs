@@ -20,50 +20,50 @@ use crate::system::TimeMode;
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Memory {
-    /// Tape age / character (offset 0x00): New or Aged.
+    /// Tape age / character: New or Aged.
     pub tape: Tape,
-    /// Head-combination mode 1..12 (offset 0x01) — which playback heads are active.
+    /// Head-combination mode 1..12 — which playback heads are active.
     pub mode: Mode,
-    /// Repeat Rate — delay time (offset 0x02; expression-pedal min/max at 0x03..=0x04).
+    /// Repeat Rate — echo speed / delay time.
     pub repeat_rate: RangedParam,
-    /// Intensity — feedback / number of repeats (offset 0x05; min/max at 0x06..=0x07).
+    /// Intensity — feedback amount (number of repeats).
     pub intensity: RangedParam,
-    /// Echo Volume — wet (delayed) signal level (offset 0x08; min/max at 0x09..=0x0A).
+    /// Echo Volume — level of the wet (delayed) signal.
     pub echo_volume: RangedParam,
-    /// Bass tone of the echo (offset 0x0B; min/max at 0x0C..=0x0D).
+    /// Bass tone of the echo.
     pub bass: RangedParam,
-    /// Treble tone of the echo (offset 0x0E; min/max at 0x0F..=0x10).
+    /// Treble tone of the echo.
     pub treble: RangedParam,
-    /// Reverb Volume (offset 0x11; min/max at 0x12..=0x13).
+    /// Reverb Volume.
     pub reverb_volume: RangedParam,
-    /// Saturation — tape overdrive amount (offset 0x14; min/max at 0x15..=0x16).
+    /// Saturation — tape overdrive amount.
     pub saturation: RangedParam,
-    /// Wow & Flutter — tape pitch instability (offset 0x17; min/max at 0x18..=0x19).
+    /// Wow & Flutter — tape pitch instability.
     pub wow_flutter: RangedParam,
-    /// Reverb on/off (offset 0x1A).
+    /// Reverb on/off.
     pub reverb_sw: bool,
-    /// Tap on/off (offset 0x1B).
+    /// Tap on/off.
     pub tap_sw: bool,
-    /// 0..=2000 ms. Wire format packs this as four 4-bit nibbles, MSB→LSB,
-    /// at offsets 0x1C..0x1F. Effective ceiling depends on Time Mode
-    /// (Normal=1000 ms, Long=2000 ms) — not enforced here.
+    /// Tap-tempo delay time in milliseconds (0..=2000). The effective ceiling
+    /// depends on Time Mode — Normal 1000 ms, Long 2000 ms — and isn't enforced here.
     pub tap_time_ms: u16,
-    /// Per-memory delay-time range (offset 0x20). Overrides the System Time Mode
-    /// for this patch; per-memory wins for the tap-time ceiling.
+    /// Per-memory delay-time range. Overrides the System Time Mode for this
+    /// patch; the per-memory value wins for the tap-time ceiling.
     pub time_mode: TimeMode,
 }
 
-/// A value-with-expression-pedal-range parameter (Repeat Rate, Intensity, etc.).
+/// An echo parameter that an expression pedal can sweep: `value` is the current
+/// setting and `min`/`max` bound the pedal's range. All three are 0..=127.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RangedParam {
-    /// Current value, 0..=127.
+    /// Current setting.
     pub value: u8,
-    /// Expression-pedal lower bound, 0..=127.
+    /// Lower bound of the expression-pedal sweep.
     pub min: u8,
-    /// Expression-pedal upper bound, 0..=127.
+    /// Upper bound of the expression-pedal sweep.
     pub max: u8,
 }
 

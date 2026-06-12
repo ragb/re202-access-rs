@@ -21,7 +21,7 @@
   ],
   "properties": {
     "bass": {
-      "description": "Bass tone of the echo (offset 0x0B; min/max at 0x0C..=0x0D).",
+      "description": "Bass tone of the echo.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -29,7 +29,7 @@
       ]
     },
     "echo_volume": {
-      "description": "Echo Volume — wet (delayed) signal level (offset 0x08; min/max at 0x09..=0x0A).",
+      "description": "Echo Volume — level of the wet (delayed) signal.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -37,7 +37,7 @@
       ]
     },
     "intensity": {
-      "description": "Intensity — feedback / number of repeats (offset 0x05; min/max at 0x06..=0x07).",
+      "description": "Intensity — feedback amount (number of repeats).",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -45,7 +45,7 @@
       ]
     },
     "mode": {
-      "description": "Head-combination mode 1..12 (offset 0x01) — which playback heads are active.",
+      "description": "Head-combination mode 1..12 — which playback heads are active.",
       "allOf": [
         {
           "$ref": "#/definitions/Mode"
@@ -53,7 +53,7 @@
       ]
     },
     "repeat_rate": {
-      "description": "Repeat Rate — delay time (offset 0x02; expression-pedal min/max at 0x03..=0x04).",
+      "description": "Repeat Rate — echo speed / delay time.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -61,11 +61,11 @@
       ]
     },
     "reverb_sw": {
-      "description": "Reverb on/off (offset 0x1A).",
+      "description": "Reverb on/off.",
       "type": "boolean"
     },
     "reverb_volume": {
-      "description": "Reverb Volume (offset 0x11; min/max at 0x12..=0x13).",
+      "description": "Reverb Volume.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -73,7 +73,7 @@
       ]
     },
     "saturation": {
-      "description": "Saturation — tape overdrive amount (offset 0x14; min/max at 0x15..=0x16).",
+      "description": "Saturation — tape overdrive amount.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -81,17 +81,17 @@
       ]
     },
     "tap_sw": {
-      "description": "Tap on/off (offset 0x1B).",
+      "description": "Tap on/off.",
       "type": "boolean"
     },
     "tap_time_ms": {
-      "description": "0..=2000 ms. Wire format packs this as four 4-bit nibbles, MSB→LSB, at offsets 0x1C..0x1F. Effective ceiling depends on Time Mode (Normal=1000 ms, Long=2000 ms) — not enforced here.",
+      "description": "Tap-tempo delay time in milliseconds (0..=2000). The effective ceiling depends on Time Mode — Normal 1000 ms, Long 2000 ms — and isn't enforced here.",
       "type": "integer",
       "format": "uint16",
       "minimum": 0.0
     },
     "tape": {
-      "description": "Tape age / character (offset 0x00): New or Aged.",
+      "description": "Tape age / character: New or Aged.",
       "allOf": [
         {
           "$ref": "#/definitions/Tape"
@@ -99,7 +99,7 @@
       ]
     },
     "time_mode": {
-      "description": "Per-memory delay-time range (offset 0x20). Overrides the System Time Mode for this patch; per-memory wins for the tap-time ceiling.",
+      "description": "Per-memory delay-time range. Overrides the System Time Mode for this patch; the per-memory value wins for the tap-time ceiling.",
       "allOf": [
         {
           "$ref": "#/definitions/TimeMode"
@@ -107,7 +107,7 @@
       ]
     },
     "treble": {
-      "description": "Treble tone of the echo (offset 0x0E; min/max at 0x0F..=0x10).",
+      "description": "Treble tone of the echo.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -115,7 +115,7 @@
       ]
     },
     "wow_flutter": {
-      "description": "Wow & Flutter — tape pitch instability (offset 0x17; min/max at 0x18..=0x19).",
+      "description": "Wow & Flutter — tape pitch instability.",
       "allOf": [
         {
           "$ref": "#/definitions/RangedParam"
@@ -214,7 +214,7 @@
       ]
     },
     "RangedParam": {
-      "description": "A value-with-expression-pedal-range parameter (Repeat Rate, Intensity, etc.).",
+      "description": "An echo parameter that an expression pedal can sweep: `value` is the current setting and `min`/`max` bound the pedal's range. All three are 0..=127.",
       "type": "object",
       "required": [
         "max",
@@ -223,19 +223,19 @@
       ],
       "properties": {
         "max": {
-          "description": "Expression-pedal upper bound, 0..=127.",
+          "description": "Upper bound of the expression-pedal sweep.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "min": {
-          "description": "Expression-pedal lower bound, 0..=127.",
+          "description": "Lower bound of the expression-pedal sweep.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "value": {
-          "description": "Current value, 0..=127.",
+          "description": "Current setting.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
