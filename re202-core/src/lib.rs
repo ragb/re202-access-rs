@@ -5,16 +5,18 @@
 #![forbid(unsafe_code)]
 
 pub mod address;
+pub mod catalog;
 pub mod codec;
+pub mod device;
 pub mod inbound;
 pub mod memory;
-#[cfg(feature = "schema")]
-pub mod schema;
 pub mod sysex;
 pub mod system;
 pub mod yaml;
 
+pub use catalog::{Re202Catalogs, RE202_CATALOGS};
 pub use codec::CodecError;
+pub use device::Re202;
 pub use inbound::{classify_inbound, InboundMessage};
 pub use memory::{Memory, Mode, RangedParam, Tape};
 pub use sysex::{Frame, SysExError, CMD_DT1, CMD_RQ1, RE202_MODEL_ID, ROLAND_ID};

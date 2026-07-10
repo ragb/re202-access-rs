@@ -4,20 +4,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "CLI for the BOSS RE-202 Space Echo (dump/sync/diff/show/lint/select)."
+description = "CLI for the BOSS RE-202 Space Echo (dump/sync/diff/show/lint/schema/catalog/resolve)."
 
 [[bin]]
 name = "re202"
 path = "src/main.rs"
 
 [dependencies]
+# The CLI is the generic engine; `re202` only wires its Device impl into `run`.
 re202-core = { workspace = true, features = ["schema"] }
-clap = { workspace = true }
-schemars = { workspace = true }
-serde_json = { workspace = true }
-midir = { workspace = true }
-log = { workspace = true }
-env_logger = { workspace = true }
-anyhow = { workspace = true }
-thiserror = { workspace = true }
-serde_yaml = { workspace = true }
+midi-access-cli = { workspace = true }

@@ -21,49 +21,106 @@
   ],
   "properties": {
     "bass": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Bass tone of the echo.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "echo_volume": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Echo Volume — level of the wet (delayed) signal.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "intensity": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Intensity — feedback amount (number of repeats).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "mode": {
-      "$ref": "#/definitions/Mode"
+      "description": "Head-combination mode 1..12 — which playback heads are active.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Mode"
+        }
+      ]
     },
     "repeat_rate": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Repeat Rate — echo speed / delay time.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "reverb_sw": {
+      "description": "Reverb on/off.",
       "type": "boolean"
     },
     "reverb_volume": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Reverb Volume.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "saturation": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Saturation — tape overdrive amount.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "tap_sw": {
+      "description": "Tap on/off.",
       "type": "boolean"
     },
     "tap_time_ms": {
-      "description": "0..=2000 ms. Wire format packs this as four 4-bit nibbles, MSB→LSB, at offsets 0x1C..0x1F. Effective ceiling depends on Time Mode (Normal=1000 ms, Long=2000 ms) — not enforced here.",
+      "description": "Tap-tempo delay time in milliseconds (0..=2000). The effective ceiling depends on Time Mode — Normal 1000 ms, Long 2000 ms — and isn't enforced here.",
       "type": "integer",
       "format": "uint16",
       "minimum": 0.0
     },
     "tape": {
-      "$ref": "#/definitions/Tape"
+      "description": "Tape age / character: New or Aged.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Tape"
+        }
+      ]
     },
     "time_mode": {
-      "$ref": "#/definitions/TimeMode"
+      "description": "Per-memory delay-time range. Overrides the System Time Mode for this patch; the per-memory value wins for the tap-time ceiling.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/TimeMode"
+        }
+      ]
     },
     "treble": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Treble tone of the echo.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     },
     "wow_flutter": {
-      "$ref": "#/definitions/RangedParam"
+      "description": "Wow & Flutter — tape pitch instability.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RangedParam"
+        }
+      ]
     }
   },
   "definitions": {
@@ -157,7 +214,7 @@
       ]
     },
     "RangedParam": {
-      "description": "A value-with-expression-pedal-range parameter (Repeat Rate, Intensity, etc.).",
+      "description": "An echo parameter that an expression pedal can sweep: `value` is the current setting and `min`/`max` bound the pedal's range. All three are 0..=127.",
       "type": "object",
       "required": [
         "max",
@@ -166,16 +223,19 @@
       ],
       "properties": {
         "max": {
+          "description": "Upper bound of the expression-pedal sweep.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "min": {
+          "description": "Lower bound of the expression-pedal sweep.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
         },
         "value": {
+          "description": "Current setting.",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
@@ -183,6 +243,7 @@
       }
     },
     "Tape": {
+      "description": "Tape age / character — New (bright) or Aged (worn, darker).",
       "type": "string",
       "enum": [
         "new",
@@ -190,6 +251,7 @@
       ]
     },
     "TimeMode": {
+      "description": "Delay-time range: Normal (≤1000 ms) or Long (≤2000 ms).",
       "type": "string",
       "enum": [
         "normal",

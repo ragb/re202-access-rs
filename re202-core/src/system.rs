@@ -19,15 +19,25 @@ pub const SYSTEM_AREA_LEN: usize = 18;
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemArea {
+    /// Audio input source: instrument (Guitar) or Line level.
     pub input_source: InputSource,
+    /// Function assigned to the CTL1 footswitch / external pedal.
     pub ctl1_function: Ctl1Function,
+    /// Function assigned to the CTL2 footswitch / external pedal.
     pub ctl2_function: Ctl2Function,
+    /// Direct (dry) signal routing and voicing.
     pub direct: DirectSettings,
+    /// Carry the echo/reverb tail over when switching memories.
     pub carryover: bool,
+    /// Global delay-time range: Normal (≤1000 ms) or Long (≤2000 ms). Each
+    /// memory also stores its own Time Mode, which takes precedence for the
+    /// active patch's tap-time ceiling.
     pub time_mode: TimeMode,
+    /// Reverb algorithm.
     pub reverb_type: ReverbType,
-    /// 1..=4 — number of memory slots cycled by the MEMORY footswitch.
+    /// Number of memory slots (1..=4) cycled by the MEMORY footswitch.
     pub memory_extent: u8,
+    /// MIDI configuration: channels, message filters, and sync.
     pub midi: MidiSettings,
 }
 
@@ -36,7 +46,9 @@ pub struct SystemArea {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectSettings {
+    /// Whether the direct (dry) signal passes through alongside the effect.
     pub on: bool,
+    /// Direct-signal voicing: clean Analog, or RE-201 Simulate.
     pub mode: DirectMode,
 }
 
@@ -45,19 +57,29 @@ pub struct DirectSettings {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MidiSettings {
+    /// Channel the device receives on.
     pub rx_channel: MidiChannel,
+    /// Channel the device transmits on.
     pub tx_channel: TxChannel,
+    /// Receive Program Change to switch memories.
     pub pc_in: bool,
+    /// Send Program Change when the active memory changes.
     pub pc_out: bool,
+    /// Receive Control Change to set parameters.
     pub cc_in: bool,
+    /// Send Control Change when a knob is moved.
     pub cc_out: bool,
+    /// Tempo sync source: Internal, or Auto (follow incoming clock).
     pub sync_source: SyncSource,
+    /// Source of MIDI realtime messages (start/stop/clock): Internal or MIDI.
     pub realtime_source: RealtimeSource,
+    /// Echo incoming MIDI back out the MIDI OUT / THRU port.
     pub thru: bool,
 }
 
 // === enums ===
 
+/// Audio input source — instrument (Guitar) or Line level.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -68,6 +90,7 @@ pub enum InputSource {
     Line,
 }
 
+/// Function the CTL1 footswitch / external pedal performs.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -81,6 +104,7 @@ pub enum Ctl1Function {
     Warp,
 }
 
+/// Function the CTL2 footswitch / external pedal performs.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -94,6 +118,7 @@ pub enum Ctl2Function {
     Twist,
 }
 
+/// Voicing of the direct (dry) signal.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -104,6 +129,7 @@ pub enum DirectMode {
     Re201Simulate,
 }
 
+/// Delay-time range: Normal (≤1000 ms) or Long (≤2000 ms).
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -114,6 +140,7 @@ pub enum TimeMode {
     Long,
 }
 
+/// Reverb algorithm.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -172,6 +199,7 @@ pub enum TxChannelSymbol {
     Rx,
 }
 
+/// Tempo sync source.
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -182,6 +210,7 @@ pub enum SyncSource {
     Auto,
 }
 
+/// Source of MIDI realtime messages (start / stop / clock).
 #[cfg_attr(feature = "tsify", derive(tsify_next::Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
