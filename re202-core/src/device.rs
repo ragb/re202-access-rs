@@ -24,6 +24,20 @@
 //! (`memorySlotBase(n)` etc.). The CLI covers the global System, MANUAL, and
 //! whichever memory is currently active (via `edit`).
 //!
+//! ## Storing (`sync … --store`)
+//!
+//! The RE-202 has **no save command**. Its edit buffer is volatile — writes there
+//! don't propagate to the active slot — but a direct DT1 to a *memory slot's*
+//! address is persisted to non-volatile storage immediately (power-cycle verified,
+//! see `docs/sysex-notes.md`). So [`Device::store`] is a **copy-to-slot** store: it
+//! re-writes the document's own 33 bytes at the destination slot's address. That's
+//! why the kit's hook hands it the document.
+//!
+//! `re202 sync edit -i patch.yaml --store 12` therefore writes the patch live
+//! *and* commits it to MEMORY 12. `--store` takes a slot `1..=127` or `manual`.
+//! This is also how the CLI reaches the 127 user slots without giving each one an
+//! area of its own.
+//!
 //! ## Wire framing
 //!
 //! Roland framing (`F0 41 <dev> 00 00 00 00 18 12 …` data-set / `11` request) and
@@ -140,6 +154,26 @@ fn unknown(area: &str) -> DeviceError {
     DeviceError::UnknownArea(area.to_string())
 }
 
+/// Parse a `--store` destination: `manual` (case-insensitive) or a user slot
+/// `1..=127`. Slot `0` is rejected — MANUAL is named, not numbered.
+fn parse_dest(dest: &str) -> Result<MemorySlot, DeviceError> {
+    let d = dest.trim();
+    if d.is_empty() {
+        return Err(enc(
+            "--store needs a destination: a slot 1..=127, or `manual`",
+        ));
+    }
+    if d.eq_ignore_ascii_case("manual") {
+        return Ok(MemorySlot::Manual);
+    }
+    let n: u8 = d
+        .parse()
+        .map_err(|_| enc(format!("bad slot {dest:?} (expected 1..=127, or `manual`)")))?;
+    MemorySlot::from_index(n)
+        .filter(|_| n != 0)
+        .ok_or_else(|| enc(format!("slot {n} out of range (1..=127, or `manual`)")))
+}
+
 impl Device for Re202 {
     const NAME: &'static str = "re202";
 
@@ -214,6 +248,33 @@ impl Device for Re202 {
                 Ok(Frame::data_set(device_id, addr, bytes.to_vec()).encode())
             }
         }
+    }
+
+    /// A *copy-to-slot* store. The RE-202 has no save command, and the edit
+    /// buffer at `20 00 00 00` is volatile — writes there do not propagate to the
+    /// active slot. Committing therefore means re-writing the document's own 33
+    /// bytes at the destination slot's address, which a direct DT1 persists to
+    /// non-volatile storage immediately (power-cycle verified; see
+    /// `docs/sysex-notes.md`). This is why the hook carries `doc`.
+    ///
+    /// So `sync edit -i patch.yaml --store 12` writes the patch live *and* commits
+    /// it to MEMORY 12. `system` has no slot to store to — a System write already
+    /// persists — and says so.
+    fn store(area: &str, doc: &Value, dest: &str, ch: u8) -> Option<Result<Vec<u8>, DeviceError>> {
+        Some((|| match target_for(area).ok_or_else(|| unknown(area))? {
+            Target::System => Err(enc(
+                "`system` has no memory slot to store to (a System write already persists)",
+            )),
+            Target::Memory(_) => {
+                let slot = parse_dest(dest)?;
+                let memory: Memory = serde_yaml::from_value(doc.clone()).map_err(enc)?;
+                let bytes = memory.to_bytes().map_err(enc)?;
+                Ok(
+                    Frame::data_set(roland_device_id(ch), slot.base_address(), bytes.to_vec())
+                        .encode(),
+                )
+            }
+        })())
     }
 
     fn classify_inbound(bytes: &[u8]) -> Inbound {
@@ -397,6 +458,44 @@ mod tests {
             Inbound::Dump { area, .. } => assert_eq!(area.as_deref(), Some("system")),
             other => panic!("expected Dump, got {other:?}"),
         }
+    }
+
+    /// The store frame must be the document's own bytes, re-addressed to the
+    /// target slot — identical to what `encode` would send, only elsewhere.
+    #[test]
+    fn store_rewrites_the_document_at_the_slot_address() {
+        let doc = memory_doc();
+        let stored = Re202::store("edit", &doc, "12", 0).unwrap().unwrap();
+        let frame = Frame::decode(&stored).unwrap();
+        assert_eq!(frame.command, CMD_DT1);
+        assert_eq!(frame.address, MemorySlot::User(12).base_address());
+
+        // Same payload as a plain write, just at a different address.
+        let live = Re202::encode("edit", &doc, 0).unwrap();
+        assert_eq!(frame.data, Frame::decode(&live).unwrap().data);
+    }
+
+    #[test]
+    fn store_accepts_manual_and_rejects_bad_slots() {
+        let doc = memory_doc();
+        let manual = Re202::store("memory", &doc, "MANUAL", 0).unwrap().unwrap();
+        assert_eq!(
+            Frame::decode(&manual).unwrap().address,
+            MemorySlot::Manual.base_address()
+        );
+        for bad in ["", "0", "128", "twelve"] {
+            assert!(
+                Re202::store("edit", &doc, bad, 0).unwrap().is_err(),
+                "expected {bad:?} to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn store_to_system_is_an_error_not_a_missing_hook() {
+        let doc = system_doc();
+        // `Some(Err(..))`: the device *has* a store, but `system` isn't storable.
+        assert!(Re202::store("system", &doc, "1", 0).unwrap().is_err());
     }
 
     #[test]

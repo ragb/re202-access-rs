@@ -433,7 +433,7 @@ checksum = "6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8"
 [[package]]
 name = "midi-access-cli"
 version = "0.1.0"
-source = "git+https://github.com/ragb/midi-access-kit?tag=v0.1.0#d9fb139d7e3900052f1f688828451e3052b64b19"
+source = "git+https://github.com/ragb/midi-access-kit?tag=v0.3.0#c805baf049403fb410e8cb5b52f03df24a7b6d94"
 dependencies = [
  "anyhow",
  "clap",
@@ -450,7 +450,7 @@ dependencies = [
 [[package]]
 name = "midi-access-core"
 version = "0.1.0"
-source = "git+https://github.com/ragb/midi-access-kit?tag=v0.1.0#d9fb139d7e3900052f1f688828451e3052b64b19"
+source = "git+https://github.com/ragb/midi-access-kit?tag=v0.3.0#c805baf049403fb410e8cb5b52f03df24a7b6d94"
 dependencies = [
  "schemars",
  "serde",

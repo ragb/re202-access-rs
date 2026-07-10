@@ -13,8 +13,8 @@ description = "BOSS RE-202 Space Echo SysEx codec, CLI, and WASM bindings."
 re202-core = { path = "re202-core" }
 # Shared foundation crates, pinned to the published kit. For local development
 # against an unreleased kit, point these at `path = "../midi-access-kit/<crate>"`.
-midi-access-core = { git = "https://github.com/ragb/midi-access-kit", tag = "v0.1.0" }
-midi-access-cli = { git = "https://github.com/ragb/midi-access-kit", tag = "v0.1.0" }
+midi-access-core = { git = "https://github.com/ragb/midi-access-kit", tag = "v0.3.0" }
+midi-access-cli = { git = "https://github.com/ragb/midi-access-kit", tag = "v0.3.0" }
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
